@@ -5,7 +5,7 @@
 > If anything here conflicts with `CLAUDE.md`, older notes, or memory, **this file wins.**
 > Keep it updated whenever a decision changes.
 >
-> _Last updated: 2026-07-02._
+> _Last updated: 2026-07-02 (frontend milestone complete)._
 
 ---
 
@@ -18,7 +18,9 @@ haircare** brand based in India (Telangana / Hyderabad). Co-founders: **Adnan To
 Cruelty-Free · Safe for Kids · Gender-Neutral · Result-Oriented.
 
 This repo is a **complete rebuild** replacing the slow WordPress/WooCommerce site
-(skinature.org) with a modern, fast Next.js store, launching at **skinature.com**.
+with a modern, fast Next.js store, launching at **skinature.org** _(decided
+2026-07-02: the new site replaces the old WordPress site on the existing .org
+domain; all canonicals/OG/sitemap use skinature.org)_.
 
 ## 2. People & Commercial Terms
 
@@ -60,7 +62,7 @@ after this capture — the terms below are the record.)_
 - **Payments:** **Razorpay** — prepaid only.
 - **Email + Invoice:** **Resend** + **@react-pdf/renderer** (PDF invoices).
 - **Cart state:** **zustand** (persistent via localStorage).
-- **Hosting:** **Vercel** (final call at deploy). **Domain:** skinature.com.
+- **Hosting:** **Vercel** (final call at deploy). **Domain:** skinature.org.
 
 ## 5. Products (current catalog — 5)
 
@@ -118,20 +120,25 @@ price triggers the strikethrough treatment.
 
 ## 7. Execution Order (all-in, but sensible sequence)
 
-1. Frontend polish + product/data updates against the typed mock layer
-   _(landing page ✅ done & approved 2026-07-02: hero/navbar redesign, scroll-driven
-   BenefitsDeck, Beauty Brigade cards, new prices, `/our-story` + `/beauty-brigade` pages,
-   INR structured-data fix, em-dash purge. Shop/product-detail polish still pending.)_
+1. ✅ **Frontend milestone — COMPLETE (2026-07-02).** The entire frontend runs on a
+   realistic mock backend and behaves like a production store:
+   - Storefront: landing page (approved), shop (working filters/sort), product pages
+     (slug URLs, galleries, reviews, kit contents, related), search (overlay + page),
+     cart (drawer + page), checkout (validated Indian address form, ₹60/₹100 shipping
+     by state, mock Razorpay sheet with success/failure), order confirmation.
+   - Pages: our-story, beauty-brigade (placeholder), FAQ, contact, 4 policy pages,
+     custom 404/error/loading states. No dead links.
+   - Admin (`/admin`, mock auth; demo creds in `src/store/admin.ts`): dashboard,
+     orders (+detail, printable invoice, WhatsApp click-to-chat, CSV/Excel export),
+     products (pricing + sale price + stock + visibility), inventory, customers,
+     review moderation, analytics (validated chart palette), settings.
+   - Mock layer mirrors the Supabase schema (paise, slugs, statuses) for drop-in swap.
 2. Supabase foundation — schema, client utils, migrate products, refactor reads.
-3. Cart + checkout UI (zustand; address incl. state; shipping calc).
-4. Razorpay (test mode) — create-order, verify, webhook, success/failure pages.
-5. Email + PDF invoice (Resend + react-pdf), stored to Supabase Storage.
-6. Admin dashboard — auth, orders, product/pricing, content, review moderation.
-7. Excel export.
-8. WhatsApp click-to-chat send.
-9. Reviews — magic-link submit + 21-day auto-send scheduler + moderation.
-10. SEO + performance pass.
-11. Deploy to Vercel; switch Razorpay to live; DNS; live webhooks.
+3. Razorpay (test mode) — create-order, verify, webhook; replace the mock payment sheet.
+4. Email + PDF invoice (Resend + react-pdf), stored to Supabase Storage.
+5. Wire admin to Supabase (auth, orders, products, reviews, settings).
+6. Reviews — magic-link submit + 21-day auto-send scheduler.
+7. Deploy to Vercel; switch Razorpay to live; DNS; live webhooks.
 
 ## 8. Open Items / To Brainstorm
 
@@ -149,8 +156,11 @@ price triggers the strikethrough treatment.
 - **Beauty Brigade membership** structure — Adnan to define.
 - **Founders' real "Our Story" copy** — `/our-story` currently carries a well-written
   placeholder; swap in Hina & Adnan's own words when provided.
-- **Legal pages** (privacy, terms, refund/shipping policy) — footer links removed until
-  these exist; create before launch.
+- **Policy pages need Adnan's sign-off** — complete drafts are live (privacy, terms,
+  refund, shipping) with sensible defaults: 48h damage-claim window, no returns on
+  opened products, cancellation before dispatch. Confirm specifics with the client.
+- **Support email** — `care@skinature.org` used as a stand-in on /contact and in
+  policies; confirm the real address.
 - **Review auto-send scheduler** — pg_cron vs. Vercel Cron.
 - **Analytics** (Plausible / Umami / GA4) and **newsletter** destination.
 
@@ -197,6 +207,10 @@ price triggers the strikethrough treatment.
 - [ ] Move all env vars into the **production host (Vercel)** — never rely on `.env.local` in prod.
 - [ ] Final **RLS audit** on every table (nothing sensitive readable/writable by `anon`).
 - [ ] Verify production **webhooks** (Razorpay) and **email domain** (Resend SPF/DKIM).
+- [ ] Replace the **mock payment sheet** with real Razorpay checkout.
+- [ ] Swap **admin demo auth** (`src/store/admin.ts`) for Supabase Auth and remove the
+      demo credentials.
+- [ ] Get **policy pages + support email** confirmed by Adnan (see §8).
 
 ## 12. Doc Set (what lives where)
 

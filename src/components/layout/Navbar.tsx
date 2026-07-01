@@ -3,9 +3,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ShoppingBag, Menu, X, Instagram, Youtube } from 'lucide-react'
+import { ShoppingBag, Menu, X, Instagram, Youtube, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useCart, cartCount } from '@/store/cart'
+import CartDrawer from '@/components/cart/CartDrawer'
+import SearchOverlay from '@/components/search/SearchOverlay'
 
 const NAV_LINKS = [
   { label: 'Shop', href: '/shop' },
@@ -37,6 +40,10 @@ const SOCIALS = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const items = useCart((s) => s.items)
+  const setDrawer = useCart((s) => s.setDrawer)
+  const count = cartCount(items)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -121,7 +128,7 @@ export default function Navbar() {
                 )}
               >
                 <Image
-                  src="/logo without bg.png"
+                  src="/logo-nobg.webp"
                   alt="Skinature, Nurtured by Nature"
                   fill
                   className="object-contain"
@@ -130,8 +137,8 @@ export default function Navbar() {
               </span>
             </Link>
 
-            {/* Right: socials · bag */}
-            <div className="flex items-center justify-end gap-5 md:gap-6 w-auto md:w-1/3">
+            {/* Right: socials · search · bag */}
+            <div className="flex items-center justify-end gap-4 md:gap-6 w-auto md:w-1/3">
               {SOCIALS.map(({ label, href, Icon }) => (
                 <a
                   key={label}
@@ -147,17 +154,36 @@ export default function Navbar() {
 
               <span className="hidden md:block h-5 w-px bg-forest-900/15" aria-hidden="true" />
 
-              <Link
-                href="/cart"
-                aria-label="Cart"
-                className="text-forest-900 hover:text-gold-600 transition-colors duration-300 p-1 -mr-1"
+              <button
+                onClick={() => setSearchOpen(true)}
+                aria-label="Search products"
+                className="text-forest-900 hover:text-gold-600 transition-colors duration-300 p-1"
+              >
+                <Search size={22} strokeWidth={2} />
+              </button>
+
+              <button
+                onClick={() => setDrawer(true)}
+                aria-label={count > 0 ? `Cart, ${count} items` : 'Cart'}
+                className="relative text-forest-900 hover:text-gold-600 transition-colors duration-300 p-1 -mr-1"
               >
                 <ShoppingBag size={22} strokeWidth={2} />
-              </Link>
+                {count > 0 && (
+                  <span
+                    className="absolute -top-1 -right-1.5 min-w-[18px] h-[18px] px-1 bg-gold-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center tabular-nums"
+                    aria-hidden="true"
+                  >
+                    {count > 99 ? '99+' : count}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
         </nav>
       </header>
+
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <CartDrawer />
 
       {/* Mobile menu */}
       <AnimatePresence>
@@ -176,7 +202,7 @@ export default function Navbar() {
             <div className="flex items-center justify-between px-6 py-4">
               <span className="relative block w-32 h-10">
                 <Image
-                  src="/logo without bg.png"
+                  src="/logo-nobg.webp"
                   alt="Skinature"
                   fill
                   className="object-contain object-left"

@@ -13,7 +13,7 @@ export default function Footer() {
         <div className="md:col-span-1">
             <div className="mb-6">
                 <Image
-                    src="/logo without bg.png"
+                    src="/logo-nobg.webp"
                     alt="Skinature"
                     width={180}
                     height={60}
@@ -50,8 +50,10 @@ export default function Footer() {
             <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-white/40 mb-8">Shop</h4>
             <ul className="space-y-4 text-sm text-white/80 font-sans">
                 <li><Link href="/shop" className="hover:text-gold-500 transition-colors">All Products</Link></li>
-                <li><Link href="/product/4" className="hover:text-gold-500 transition-colors">Hair Care Kit</Link></li>
-                <li><Link href="/product/5" className="hover:text-gold-500 transition-colors">Bridal Kit</Link></li>
+                <li><Link href="/shop?cat=skin" className="hover:text-gold-500 transition-colors">Skin Care</Link></li>
+                <li><Link href="/shop?cat=hair" className="hover:text-gold-500 transition-colors">Hair Care</Link></li>
+                <li><Link href="/product/hair-care-kit" className="hover:text-gold-500 transition-colors">Hair Care Kit</Link></li>
+                <li><Link href="/product/bridal-kit" className="hover:text-gold-500 transition-colors">Bridal Kit</Link></li>
             </ul>
         </nav>
 
@@ -60,7 +62,8 @@ export default function Footer() {
             <ul className="space-y-4 text-sm text-white/80 font-sans">
                 <li><Link href="/our-story" className="hover:text-gold-500 transition-colors">Our Story</Link></li>
                 <li><Link href="/beauty-brigade" className="hover:text-gold-500 transition-colors">Beauty Brigade</Link></li>
-                <li><Link href="/#customer-reviews-heading" className="hover:text-gold-500 transition-colors">Customer Reviews</Link></li>
+                <li><Link href="/faq" className="hover:text-gold-500 transition-colors">FAQ</Link></li>
+                <li><Link href="/contact" className="hover:text-gold-500 transition-colors">Contact Us</Link></li>
             </ul>
         </nav>
 
@@ -83,8 +86,14 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 pt-8 text-center md:text-left text-xs text-white/30 uppercase tracking-wider">
+      <div className="max-w-7xl mx-auto px-6 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-white/30 uppercase tracking-wider">
         <p>&copy; {new Date().getFullYear()} Skinature. All rights reserved.</p>
+        <nav aria-label="Legal" className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+            <Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+            <Link href="/refund-policy" className="hover:text-white transition-colors">Refunds</Link>
+            <Link href="/shipping-policy" className="hover:text-white transition-colors">Shipping</Link>
+        </nav>
       </div>
     </footer>
   )

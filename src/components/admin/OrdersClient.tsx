@@ -1,0 +1,179 @@
+'use client'
+
+import { useMemo, useState } from 'react'
+import Link from 'next/link'
+import { Search, Download } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useAdmin } from '@/store/admin'
+import { effectiveOrders } from '@/lib/admin-metrics'
+import type { OrderStatus } from '@/lib/mock/orders'
+import { formatPaise, formatDate } from '@/lib/format'
+import { toCsv, downloadCsv } from '@/lib/csv'
+import { PageHeader, Card, OrderStatusBadge, AdminButton, adminInputClass } from '@/components/admin/ui'
+
+const STATUS_FILTERS: { key: OrderStatus | 'all'; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'pending', label: 'Pending' },
+  { key: 'paid', label: 'Paid' },
+  { key: 'shipped', label: 'Shipped' },
+  { key: 'delivered', label: 'Delivered' },
+  { key: 'cancelled', label: 'Cancelled' },
+]
+
+export default function OrdersClient() {
+  const orderStatus = useAdmin((s) => s.orderStatus)
+  const [query, setQuery] = useState('')
+  const [status, setStatus] = useState<OrderStatus | 'all'>('all')
+
+  const orders = useMemo(() => effectiveOrders(orderStatus), [orderStatus])
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return orders.filter((o) => {
+      if (status !== 'all' && o.status !== status) return false
+      if (!q) return true
+      return [o.id, o.customer.name, o.customer.email, o.customer.phone, o.address.city]
+        .join(' ')
+        .toLowerCase()
+        .includes(q)
+    })
+  }, [orders, query, status])
+
+  const exportCsv = () => {
+    const csv = toCsv(
+      [
+        'Order ID', 'Date', 'Customer', 'Email', 'Phone', 'City', 'State',
+        'PIN', 'Items', 'Subtotal (₹)', 'Shipping (₹)', 'Total (₹)', 'Status',
+        'Payment ID', 'Invoice No',
+      ],
+      visible.map((o) => [
+        o.id,
+        formatDate(o.createdAt),
+        o.customer.name,
+        o.customer.email,
+        o.customer.phone,
+        o.address.city,
+        o.address.state,
+        o.address.pincode,
+        o.items.map((i) => `${i.name} x ${i.qty}`).join('; '),
+        (o.subtotalPaise / 100).toFixed(2),
+        (o.shippingPaise / 100).toFixed(2),
+        (o.totalPaise / 100).toFixed(2),
+        o.status,
+        o.paymentId ?? '',
+        o.invoiceNo ?? '',
+      ])
+    )
+    const today = new Date().toISOString().slice(0, 10)
+    downloadCsv(`skinature-orders-${today}.csv`, csv)
+  }
+
+  return (
+    <>
+      <PageHeader
+        title="Orders"
+        description={`${orders.length} orders in total.`}
+        actions={
+          <AdminButton onClick={exportCsv} variant="outline">
+            <Download size={14} aria-hidden="true" />
+            Export Excel (CSV)
+          </AdminButton>
+        }
+      />
+
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between mb-5">
+        <div className="flex gap-2 overflow-x-auto pb-1 -mb-1">
+          {STATUS_FILTERS.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setStatus(f.key)}
+              aria-pressed={status === f.key}
+              className={cn(
+                'px-4 py-2 rounded-full border text-xs font-semibold uppercase tracking-[0.08em] whitespace-nowrap transition-colors flex-shrink-0',
+                status === f.key
+                  ? 'bg-forest-900 text-cream border-forest-900'
+                  : 'bg-white text-forest-900/60 border-forest-900/15 hover:border-forest-900/50'
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="relative md:w-72">
+          <Search
+            size={15}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-forest-900/35 pointer-events-none"
+            aria-hidden="true"
+          />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search order, customer, city..."
+            aria-label="Search orders"
+            className={cn(adminInputClass, 'pl-10')}
+          />
+        </div>
+      </div>
+
+      <Card>
+        {visible.length === 0 ? (
+          <p className="text-forest-900/50 text-sm py-10 text-center">
+            No orders match this filter.
+          </p>
+        ) : (
+          <div className="overflow-x-auto -mx-5 md:-mx-6 px-5 md:px-6">
+            <table className="w-full text-sm min-w-[760px]">
+              <thead>
+                <tr className="text-left text-forest-900/45 text-xs uppercase tracking-[0.1em] border-b border-forest-900/10">
+                  <th className="py-3 pr-4 font-semibold">Order</th>
+                  <th className="py-3 pr-4 font-semibold">Customer</th>
+                  <th className="py-3 pr-4 font-semibold">Location</th>
+                  <th className="py-3 pr-4 font-semibold">Date</th>
+                  <th className="py-3 pr-4 font-semibold">Items</th>
+                  <th className="py-3 pr-4 font-semibold">Total</th>
+                  <th className="py-3 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-forest-900/6">
+                {visible.map((order) => (
+                  <tr key={order.id} className="hover:bg-forest-50/50 transition-colors">
+                    <td className="py-3.5 pr-4">
+                      <Link
+                        href={`/admin/orders/${order.id}`}
+                        className="font-semibold text-forest-900 hover:text-gold-600 transition-colors"
+                      >
+                        {order.id}
+                      </Link>
+                    </td>
+                    <td className="py-3.5 pr-4">
+                      <p className="text-forest-900/85">{order.customer.name}</p>
+                      <p className="text-forest-900/40 text-xs">{order.customer.phone}</p>
+                    </td>
+                    <td className="py-3.5 pr-4 text-forest-900/60 whitespace-nowrap">
+                      {order.address.city}, {order.address.state === 'Telangana' ? 'TG' : order.address.state}
+                    </td>
+                    <td className="py-3.5 pr-4 text-forest-900/55 whitespace-nowrap">
+                      {formatDate(order.createdAt)}
+                    </td>
+                    <td className="py-3.5 pr-4 text-forest-900/60 tabular-nums">
+                      {order.items.reduce((n, i) => n + i.qty, 0)}
+                    </td>
+                    <td className="py-3.5 pr-4 font-medium text-forest-900 tabular-nums">
+                      {formatPaise(order.totalPaise)}
+                    </td>
+                    <td className="py-3.5">
+                      <OrderStatusBadge status={order.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </>
+  )
+}

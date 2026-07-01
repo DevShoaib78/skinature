@@ -29,7 +29,7 @@ export default function CustomerReviews() {
           className="relative w-full"
         >
           <Image
-            src="/customerreviews.png"
+            src="/customerreviews.webp"
             alt="Customer reviews: what our customers say about Skinature"
             width={1400}
             height={800}

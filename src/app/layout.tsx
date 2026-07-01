@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Lato, Pinyon_Script } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/layout/SmoothScroll";
+import CartHydration from "@/components/cart/CartHydration";
 import { SITE_NAME, SITE_TAGLINE, SITE_DESCRIPTION, SITE_URL } from "@/lib/data";
 
 const cormorant = Cormorant_Garamond({
@@ -71,7 +72,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    locale: "en_US",
+    locale: "en_IN",
     url: SITE_URL,
     siteName: SITE_NAME,
     title: `${SITE_NAME} | ${SITE_TAGLINE} | Premium Natural Skincare`,
@@ -107,6 +108,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${cormorant.variable} ${lato.variable} ${pinyon.variable}`}>
       <body className="antialiased bg-cream text-forest-900 font-sans selection:bg-forest-100 selection:text-forest-900">
+        <CartHydration />
         <SmoothScroll>
           {children}
         </SmoothScroll>

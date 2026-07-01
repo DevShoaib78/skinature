@@ -13,14 +13,17 @@
 
 Skinature ("Nurtured by Nature") — a premium natural **skincare & haircare** brand based
 in India (Telangana). Co-founders **Adnan Touseef** & **Hina Mushfiq**. This repo is a
-**complete rebuild** of the slow WordPress/WooCommerce site (skinature.org) into a modern,
-fast Next.js e-commerce store, launching at **skinature.com**. Positioning: honest,
-chemical-free, "proudly desi." **NOT Ayurvedic** — they do not market themselves that way.
+**complete rebuild** of the slow WordPress/WooCommerce site into a modern, fast Next.js
+e-commerce store, launching at **skinature.org** (replacing the old site on that domain).
+Positioning: honest, chemical-free, "proudly desi." **NOT Ayurvedic** — they do not
+market themselves that way.
 
-Current state: the **frontend is built and the landing page is polished/approved**
-(home, shop, product pages, our-story, beauty-brigade placeholder, SEO scaffolding).
-The **backend does not exist yet** (no DB, cart, payments, admin, email).
-Building it out is the job — see `docs/DECISIONS.md`.
+Current state: the **entire frontend is complete and runs on a realistic mock backend**
+— storefront (shop, product pages, search, cart, checkout with a mock payment sheet),
+info/policy pages, error states, and a full **admin panel at `/admin`** (mock auth,
+orders, products, inventory, customers, review moderation, analytics, settings).
+The remaining work is the **real backend swap**: Supabase, Razorpay, Resend emails,
+magic-link reviews — see `docs/DECISIONS.md` §7 for the sequence.
 
 ## Tech Stack
 
@@ -45,32 +48,44 @@ npm run lint     # ESLint
 
 ```
 src/
-├── app/                       # Next.js App Router pages
-│   ├── layout.tsx             # Root layout (fonts, metadata)
-│   ├── page.tsx               # Home page
-│   ├── globals.css            # Tailwind theme, custom animations
-│   ├── shop/page.tsx          # Shop listing
-│   ├── product/[id]/page.tsx  # Product detail (dynamic)
-│   ├── our-story/page.tsx     # Founders' story (placeholder copy until founders provide)
-│   ├── beauty-brigade/page.tsx# "We'll announce soon" placeholder (noindex)
-│   ├── robots.ts / sitemap.ts # SEO
+├── app/                        # Next.js App Router
+│   ├── page.tsx                # Home · shop/ · product/[slug]/ (SSG, dynamicParams=false)
+│   ├── search/ cart/ checkout/ # Commerce flow (checkout/success, checkout/failure)
+│   ├── our-story/ beauty-brigade/ faq/ contact/          # Info pages
+│   ├── privacy-policy/ terms/ refund-policy/ shipping-policy/  # Policies
+│   ├── admin/                  # Admin panel: login, orders(+[id]/invoice), products,
+│   │                           #   inventory, customers, reviews, analytics, settings
+│   ├── not-found.tsx error.tsx # System pages (+ per-route loading.tsx skeletons)
+│   ├── robots.ts / sitemap.ts  # SEO (admin/cart/checkout/search disallowed)
 ├── components/
-│   ├── layout/                # Navbar, Footer, SmoothScroll (exposes window.__lenis)
-│   ├── home/                  # Home sections (Hero, AboutUs, BenefitsDeck, ...)
-│   ├── shop/                  # ShopClient, ProductDetailClient
-│   ├── ui/                    # Button, ProductCard
-│   └── animations/            # Splash screen
-└── lib/
-    ├── data.ts                # Product catalog + SEO constants (mock data layer)
-    └── utils.ts               # clsx + tailwind-merge helper
+│   ├── layout/                 # Navbar, Footer, SmoothScroll (window.__lenis), PolicyLayout
+│   ├── home/ shop/ ui/         # Storefront sections + ProductCard
+│   ├── cart/ checkout/ search/ # CartDrawer, CartHydration, mock payment sheet, overlay
+│   ├── admin/                  # AdminShell (guard), module clients, charts.tsx (validated palette)
+│   └── faq/ contact/ animations/
+├── lib/
+│   ├── data.ts                 # Product catalog — mirrors Supabase schema (paise, slugs, stock)
+│   ├── mock/                   # orders.ts (deterministic, seeded), reviews.ts (with moderation status)
+│   ├── shipping.ts format.ts csv.ts whatsapp.ts admin-metrics.ts faq.ts
+└── store/
+    ├── cart.ts                 # zustand + persist (skipHydration + CartHydration)
+    └── admin.ts                # mock admin session/products/orders/reviews/settings + DEMO creds
 ```
 
-**Landing page notes:** hero = full-bleed video with graded frost overlay, no scroll cue;
-pillar band sits below the hero; `BenefitsDeck` is a scroll-driven (sticky, native scroll)
-card deck; Beauty Brigade perk cards use gold watermark icons; Customer Reviews shows the
-client's screenshot collage (their explicit choice). **Active logo asset:**
-`public/logo without bg.png` (transparent; inverted to white in the dark footer).
-**No em/en dashes in any rendered copy** — user's rule; use commas/colons/pipes instead.
+**Key facts:**
+- **Mock backend:** everything behaves real (cart, checkout, admin edits persist via
+  localStorage). The mock payment sheet stands in for Razorpay and says so on-screen.
+- **Admin demo login:** credentials exported from `src/store/admin.ts`
+  (`DEMO_ADMIN_EMAIL` / `DEMO_ADMIN_PASSWORD`); shown on the login screen. Replace with
+  Supabase Auth at launch.
+- **Product URLs are slugs** (`/product/bridal-kit`); legacy `/product/1..5` redirect
+  permanently (next.config.ts).
+- **Active logo asset:** `public/logo-nobg.webp` (transparent; inverted white on dark
+  surfaces). `public/logo.png` kept ONLY for OG images; `favicon.png` stays PNG.
+- **Chart palette** (admin analytics) is validator-approved: `#2E8B64` + `#B8860B` —
+  do not swap arbitrarily.
+- **No em/en dashes in any rendered copy** — user's rule; use commas/colons/pipes.
+- The landing page hero/deck design is approved — see git history before restyling.
 
 ## Product Catalog (authoritative prices live in `docs/DECISIONS.md` §5)
 

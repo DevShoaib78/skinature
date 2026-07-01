@@ -87,7 +87,7 @@ export default function Hero() {
           loop
           playsInline
           preload="auto"
-          poster="/videos/hero-poster.jpg"
+          poster="/videos/hero-poster.webp"
           aria-hidden="true"
         >
           <source src="/videos/hero.webm" type="video/webm" />

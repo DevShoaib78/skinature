@@ -1,17 +1,22 @@
 'use client'
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { AnimatePresence } from 'framer-motion'
 import Splash from '@/components/animations/Splash'
 import Navbar from '@/components/layout/Navbar'
 import Hero from '@/components/home/Hero'
-import AboutUs from '@/components/home/AboutUs'
-import BenefitsDeck from '@/components/home/BenefitsDeck'
-import Philosophy from '@/components/home/Philosophy'
-import GlobalReach from '@/components/home/GlobalReach'
-import SkinatureBeautyBrigade from '@/components/home/SkinatureBeautyBrigade'
 import BestSellers from '@/components/home/BestSellers'
-import CustomerReviews from '@/components/home/CustomerReviews'
+import AboutUs from '@/components/home/AboutUs'
 import Footer from '@/components/layout/Footer'
+
+// Below-the-fold sections load as separate chunks.
+const BenefitsDeck = dynamic(() => import('@/components/home/BenefitsDeck'))
+const Philosophy = dynamic(() => import('@/components/home/Philosophy'))
+const GlobalReach = dynamic(() => import('@/components/home/GlobalReach'))
+const SkinatureBeautyBrigade = dynamic(
+  () => import('@/components/home/SkinatureBeautyBrigade')
+)
+const CustomerReviews = dynamic(() => import('@/components/home/CustomerReviews'))
 
 export default function HomeClient() {
   const [loading, setLoading] = useState(true)

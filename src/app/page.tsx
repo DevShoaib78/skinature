@@ -1,5 +1,12 @@
 import HomeClient from "@/components/home/HomeClient";
-import { SITE_NAME, SITE_TAGLINE, SITE_DESCRIPTION, SITE_URL } from "@/lib/data";
+import {
+  SITE_NAME,
+  SITE_TAGLINE,
+  SITE_DESCRIPTION,
+  SITE_URL,
+  INSTAGRAM_URL,
+  YOUTUBE_URL,
+} from "@/lib/data";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -29,7 +36,7 @@ export default function Home() {
             url: SITE_URL,
             logo: `${SITE_URL}/logo.png`,
             description: SITE_DESCRIPTION,
-            sameAs: [],
+            sameAs: [INSTAGRAM_URL, YOUTUBE_URL],
           }),
         }}
       />
