@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-forest-950: #0D1F1A;
+  --color-forest-900: #1A3C34;
+  --color-forest-800: #245247;
+  --color-forest-700: #2E6A5C;
+  --color-forest-100: #E6F0EE;
+  --color-forest-50: #F2F8F7;
+
+  --color-gold-600: #A88645;
+  --color-gold-500: #C5A059;
+  --color-gold-400: #D4AF37;
+  --color-gold-100: #F4EBD9;
+
+  --color-cream: #FDFCF8;
+  --color-beige: #F5F1E8;
+  --color-beige-dark: #EBE5D5;
+
+  --font-serif: var(--font-serif);
+  --font-sans: var(--font-sans);
+  --font-cursive: var(--font-cursive);
+
+  --animate-fade-in: fade-in 1s ease-out forwards;
+  --animate-float: float 6s ease-in-out infinite;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-forest-900);
+  font-family: var(--font-sans);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+}
+
+.font-cursive {
+  font-family: var(--font-cursive);
+}
+
+/* Accessibility: reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Utility for slow fade-in (used by HomeClient) */
+.animate-fade-in-slow {
+  animation: fade-in 1.5s ease-out forwards;
+}
