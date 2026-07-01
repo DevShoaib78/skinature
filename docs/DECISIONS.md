@@ -109,15 +109,19 @@ price triggers the strikethrough treatment.
    **on-demand Excel export** (always latest data); a WhatsApp send button per order;
    **review moderation** (approve/hide); send/resend review link. Full capability list to
    be finalised with the client.
-9. **Beauty Brigade** — keep the landing section + Founder's Note as-is. **"Join The
-   Brigade" → `/beauty-brigade` page showing "We'll update / announce soon."** The actual
-   membership/loyalty program is future scope (Adnan to define).
+9. **Beauty Brigade** — keep the landing section + Founder's Note. **"Join The
+   Brigade" → `/beauty-brigade` page showing "We'll announce soon"** _(✅ built, noindex
+   until the program is real)_. The actual membership/loyalty program is future scope
+   (Adnan to define).
 10. **SEO & responsiveness** — strong on-page + technical SEO; excellent responsiveness on
     mobile / tablet / desktop. Fix the existing ₹-vs-USD bug in product structured data.
 
 ## 7. Execution Order (all-in, but sensible sequence)
 
-1. Frontend polish + product/data updates against the typed mock layer _(current stage)_.
+1. Frontend polish + product/data updates against the typed mock layer
+   _(landing page ✅ done & approved 2026-07-02: hero/navbar redesign, scroll-driven
+   BenefitsDeck, Beauty Brigade cards, new prices, `/our-story` + `/beauty-brigade` pages,
+   INR structured-data fix, em-dash purge. Shop/product-detail polish still pending.)_
 2. Supabase foundation — schema, client utils, migrate products, refactor reads.
 3. Cart + checkout UI (zustand; address incl. state; shipping calc).
 4. Razorpay (test mode) — create-order, verify, webhook, success/failure pages.
@@ -143,6 +147,10 @@ price triggers the strikethrough treatment.
   International eligibility, and duties.)_
 - **Business legal details for invoice** — legal name, address, GSTIN (if registered).
 - **Beauty Brigade membership** structure — Adnan to define.
+- **Founders' real "Our Story" copy** — `/our-story` currently carries a well-written
+  placeholder; swap in Hina & Adnan's own words when provided.
+- **Legal pages** (privacy, terms, refund/shipping policy) — footer links removed until
+  these exist; create before launch.
 - **Review auto-send scheduler** — pg_cron vs. Vercel Cron.
 - **Analytics** (Plausible / Umami / GA4) and **newsletter** destination.
 

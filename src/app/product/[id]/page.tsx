@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  const title = `${product.name} — ${product.benefit}`;
+  const title = `${product.name} | ${product.benefit}`;
   const description = product.description;
 
   return {
@@ -78,8 +78,8 @@ export default async function ProductPage({ params }: Props) {
               },
               offers: {
                 "@type": "Offer",
-                price: product.price.replace("$", ""),
-                priceCurrency: "USD",
+                price: product.price.replace(/[₹,\s]/g, ""),
+                priceCurrency: "INR",
                 availability: "https://schema.org/InStock",
               },
               aggregateRating: {

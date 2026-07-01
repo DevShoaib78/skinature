@@ -17,8 +17,9 @@ in India (Telangana). Co-founders **Adnan Touseef** & **Hina Mushfiq**. This rep
 fast Next.js e-commerce store, launching at **skinature.com**. Positioning: honest,
 chemical-free, "proudly desi." **NOT Ayurvedic** — they do not market themselves that way.
 
-Current state: the **frontend is built as a static shell** (home, shop, product pages,
-SEO scaffolding). The **backend does not exist yet** (no DB, cart, payments, admin, email).
+Current state: the **frontend is built and the landing page is polished/approved**
+(home, shop, product pages, our-story, beauty-brigade placeholder, SEO scaffolding).
+The **backend does not exist yet** (no DB, cart, payments, admin, email).
 Building it out is the job — see `docs/DECISIONS.md`.
 
 ## Tech Stack
@@ -50,10 +51,12 @@ src/
 │   ├── globals.css            # Tailwind theme, custom animations
 │   ├── shop/page.tsx          # Shop listing
 │   ├── product/[id]/page.tsx  # Product detail (dynamic)
+│   ├── our-story/page.tsx     # Founders' story (placeholder copy until founders provide)
+│   ├── beauty-brigade/page.tsx# "We'll announce soon" placeholder (noindex)
 │   ├── robots.ts / sitemap.ts # SEO
 ├── components/
-│   ├── layout/                # Navbar, Footer, SmoothScroll
-│   ├── home/                  # Home sections (Hero, AboutUs, Philosophy, ...)
+│   ├── layout/                # Navbar, Footer, SmoothScroll (exposes window.__lenis)
+│   ├── home/                  # Home sections (Hero, AboutUs, BenefitsDeck, ...)
 │   ├── shop/                  # ShopClient, ProductDetailClient
 │   ├── ui/                    # Button, ProductCard
 │   └── animations/            # Splash screen
@@ -61,6 +64,13 @@ src/
     ├── data.ts                # Product catalog + SEO constants (mock data layer)
     └── utils.ts               # clsx + tailwind-merge helper
 ```
+
+**Landing page notes:** hero = full-bleed video with graded frost overlay, no scroll cue;
+pillar band sits below the hero; `BenefitsDeck` is a scroll-driven (sticky, native scroll)
+card deck; Beauty Brigade perk cards use gold watermark icons; Customer Reviews shows the
+client's screenshot collage (their explicit choice). **Active logo asset:**
+`public/logo without bg.png` (transparent; inverted to white in the dark footer).
+**No em/en dashes in any rendered copy** — user's rule; use commas/colons/pipes instead.
 
 ## Product Catalog (authoritative prices live in `docs/DECISIONS.md` §5)
 

@@ -3,7 +3,7 @@ import { SITE_NAME, SITE_URL } from "@/lib/data";
 import type { Metadata } from "next";
 
 const shopDescription =
-  "Browse Skinature's curated collection of premium natural skincare products. Botanical serums, creams, masks, and tools — nurtured by nature, perfected for your skin.";
+  "Browse Skinature's curated collection of premium natural skincare products. Botanical serums, creams, masks, and tools, nurtured by nature and perfected for your skin.";
 
 export const metadata: Metadata = {
   title: "Shop Natural Skincare Products",
@@ -32,7 +32,7 @@ export default function ShopPage() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "CollectionPage",
-            name: `Shop — ${SITE_NAME}`,
+            name: `Shop | ${SITE_NAME}`,
             description: shopDescription,
             url: `${SITE_URL}/shop`,
             isPartOf: {

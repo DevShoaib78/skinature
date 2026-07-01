@@ -20,8 +20,7 @@ export const products: Product[] = [
   {
     id: "1",
     name: "Brightening & Cleansing Mask",
-    price: "₹450.00",
-    originalPrice: "₹550.00",
+    price: "₹499",
     category: "SKIN CARE",
     benefit: "Brightening & Detoxifying",
     description:
@@ -40,8 +39,7 @@ export const products: Product[] = [
   {
     id: "2",
     name: "Root Revival Hair Mask & Cocktail",
-    price: "₹600.00",
-    originalPrice: "₹750.00",
+    price: "₹600",
     category: "HAIR CARE",
     benefit: "Hair Strengthening & Growth",
     description:
@@ -65,8 +63,7 @@ export const products: Product[] = [
   {
     id: "3",
     name: "Root Revival Hair Oil",
-    price: "₹750.00",
-    originalPrice: "₹850.00",
+    price: "₹550",
     category: "HAIR CARE",
     benefit: "Deep Nourishment & Repair",
     description:
@@ -84,12 +81,11 @@ export const products: Product[] = [
   {
     id: "4",
     name: "Hair Care Kit",
-    price: "₹1,300.00",
-    originalPrice: "₹1,600.00",
+    price: "₹1,100",
     category: "HAIR CARE",
     benefit: "Complete Hair Care Solution",
     description:
-      "Root Revival Hair Care Combo — Oil, Mask & Cocktail",
+      "Root Revival Hair Care Combo: Oil, Mask & Cocktail",
     image: "/new mockups/Hair Care Kit.webp",
     badge: "Complete Kit",
     rating: 4.9,
@@ -99,13 +95,12 @@ export const products: Product[] = [
     ritual:
       "Use oil treatment 2-3 times weekly. Apply mask once weekly. Use cocktail spray daily on damp or dry hair. Complete hair care routine for best results.",
     benefits:
-      "Complete hair care solution. Addresses all hair concerns — strengthening, nourishment, damage repair, and growth stimulation in one comprehensive kit.",
+      "Complete hair care solution. Addresses all hair concerns: strengthening, nourishment, damage repair, and growth stimulation in one comprehensive kit.",
   },
   {
     id: "5",
-    name: "Bridal Beauty Kit",
-    price: "₹2,599.00",
-    originalPrice: "₹3,450.00",
+    name: "Bridal Kit",
+    price: "₹1,550",
     category: "HAIR CARE, SKIN CARE",
     benefit: "Complete Beauty Essentials",
     description:

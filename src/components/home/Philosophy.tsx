@@ -1,6 +1,7 @@
 'use client'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
+import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 
 export default function Philosophy() {
@@ -18,7 +19,7 @@ export default function Philosophy() {
         >
              <Image
                 src="/new mockups/Bridal Kit Box.webp"
-                alt="Skinature Bridal Beauty Kit — natural hair and skin essentials"
+                alt="Skinature Bridal Kit, natural hair and skin essentials"
                 fill
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 50vw"
@@ -39,15 +40,17 @@ export default function Philosophy() {
             <span className="italic font-cursive text-5xl md:text-6xl text-gold-600">Belief</span>
           </h2>
           <p className="text-forest-900/70 mb-6 leading-relaxed text-lg">
-            Skinature was born out of belief — that skincare and haircare shouldn&apos;t be confusing, harsh, or filled with chemicals. Belief that nature still holds the answers.
+            Skinature was born out of belief: that skincare and haircare shouldn&apos;t be confusing, harsh, or filled with chemicals. Belief that nature still holds the answers.
           </p>
           <p className="text-forest-900/70 mb-10 leading-relaxed text-lg">
-            Every product is thoughtfully crafted with natural ingredients — gentle on your skin, kind to your hair, and powerful in results. Pure, purposeful, and proudly desi.
+            Every product is thoughtfully crafted with natural ingredients: gentle on your skin, kind to your hair, and powerful in results. Pure, purposeful, and proudly desi.
           </p>
           
-          <Button variant="outline" className="border-forest-900 text-forest-900 hover:bg-forest-900 hover:text-cream">
-            Read Our Story
-          </Button>
+          <Link href="/our-story">
+            <Button variant="outline" className="border-forest-900 text-forest-900 hover:bg-forest-900 hover:text-cream">
+              Read Our Story
+            </Button>
+          </Link>
         </motion.div>
       </div>
     </section>

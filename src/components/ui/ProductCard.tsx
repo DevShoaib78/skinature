@@ -24,7 +24,7 @@ export function ProductCard({ product, className }: { product: ProductProps, cla
             )}
             <Image
                 src={product.image}
-                alt={`${product.name} — ${product.benefit}`}
+                alt={`${product.name}, ${product.benefit}`}
                 fill
                 className="object-cover transition-transform duration-1000 ease-out group-hover:scale-110"
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -53,7 +53,7 @@ export function ProductCard({ product, className }: { product: ProductProps, cla
               {product.originalPrice && (
                 <p className="font-sans text-sm text-forest-900/40 line-through">{product.originalPrice}</p>
               )}
-              <p className="font-sans text-base font-semibold text-green-700">{product.price}</p>
+              <p className="font-sans text-base font-semibold text-forest-900">{product.price}</p>
             </div>
         </div>
     </Link>

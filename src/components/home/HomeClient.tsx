@@ -5,6 +5,7 @@ import Splash from '@/components/animations/Splash'
 import Navbar from '@/components/layout/Navbar'
 import Hero from '@/components/home/Hero'
 import AboutUs from '@/components/home/AboutUs'
+import BenefitsDeck from '@/components/home/BenefitsDeck'
 import Philosophy from '@/components/home/Philosophy'
 import GlobalReach from '@/components/home/GlobalReach'
 import SkinatureBeautyBrigade from '@/components/home/SkinatureBeautyBrigade'
@@ -28,6 +29,7 @@ export default function HomeClient() {
                 <Hero />
                 <BestSellers />
                 <AboutUs />
+                <BenefitsDeck />
                 <Philosophy />
                 <GlobalReach />
                 <SkinatureBeautyBrigade />

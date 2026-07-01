@@ -4,6 +4,10 @@ import { motion, useReducedMotion } from 'framer-motion'
 import Link from 'next/link'
 import { useEffect, useRef } from 'react'
 
+const PILLARS = ['Chemical-Free', 'Lab-Tested', 'Cruelty-Free', 'Safe for Kids']
+
+const EASE = [0.22, 0.61, 0.36, 1] as const
+
 export default function Hero() {
   const prefersReducedMotion = useReducedMotion()
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -58,7 +62,17 @@ export default function Hero() {
     }
   }, [prefersReducedMotion])
 
+  const fadeUp = (delay: number) =>
+    prefersReducedMotion
+      ? {}
+      : {
+          initial: { opacity: 0, y: 24 },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.9, delay, ease: EASE },
+        }
+
   return (
+    <>
     <section
       aria-label="Hero"
       className="relative h-[100svh] min-h-[640px] w-full overflow-hidden bg-cream"
@@ -80,22 +94,36 @@ export default function Hero() {
           <source src="/videos/hero.mp4" type="video/mp4" />
         </video>
 
-        {/* Readability overlay — soft cream fog on the left, fading to clear on the right */}
+        {/* Graded frost — the video defocuses beneath the text column (desktop) */}
         <div
-          className="absolute inset-0 pointer-events-none"
+          className="hidden md:block absolute inset-0 pointer-events-none"
           style={{
-            background:
-              'linear-gradient(to right, rgba(253,252,248,0.78) 0%, rgba(253,252,248,0.5) 28%, rgba(253,252,248,0.18) 55%, rgba(253,252,248,0) 80%)',
+            backdropFilter: 'blur(16px) saturate(1.05)',
+            WebkitBackdropFilter: 'blur(16px) saturate(1.05)',
+            maskImage:
+              'linear-gradient(to right, black 0%, rgba(0,0,0,0.85) 32%, transparent 62%)',
+            WebkitMaskImage:
+              'linear-gradient(to right, black 0%, rgba(0,0,0,0.85) 32%, transparent 62%)',
           }}
           aria-hidden="true"
         />
 
-        {/* Mobile readability — top-to-bottom subtle fade for legibility */}
+        {/* Cream wash — stronger on the left where the text lives (desktop) */}
+        <div
+          className="hidden md:block absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              'linear-gradient(to right, rgba(253,252,248,0.9) 0%, rgba(253,252,248,0.66) 32%, rgba(253,252,248,0.26) 55%, rgba(253,252,248,0) 78%)',
+          }}
+          aria-hidden="true"
+        />
+
+        {/* Mobile readability — vertical wash */}
         <div
           className="md:hidden absolute inset-0 pointer-events-none"
           style={{
             background:
-              'linear-gradient(to bottom, rgba(253,252,248,0.62) 0%, rgba(253,252,248,0.25) 50%, rgba(253,252,248,0.55) 100%)',
+              'linear-gradient(to bottom, rgba(253,252,248,0.82) 0%, rgba(253,252,248,0.45) 48%, rgba(253,252,248,0.75) 100%)',
           }}
           aria-hidden="true"
         />
@@ -105,7 +133,7 @@ export default function Hero() {
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              'radial-gradient(ellipse at center, transparent 50%, rgba(13,31,26,0.22) 100%)',
+              'radial-gradient(ellipse at center, transparent 55%, rgba(13,31,26,0.18) 100%)',
           }}
           aria-hidden="true"
         />
@@ -114,103 +142,47 @@ export default function Hero() {
       {/* Hero content */}
       <div className="relative z-10 h-full max-w-7xl mx-auto px-6 md:px-10 lg:px-16 flex items-center">
         <div className="w-full md:max-w-xl lg:max-w-2xl text-center md:text-left">
-          {/* Cursive brand mark */}
-          <motion.span
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.4, ease: 'easeOut' }}
-            className="font-cursive text-4xl md:text-5xl lg:text-6xl text-gold-600 block mb-2 md:mb-3"
-          >
-            skinature
-          </motion.span>
+          {/* Headline — calm, line-level reveal */}
+          <h1 className="font-serif text-forest-900 leading-[1.02] mb-6 md:mb-8">
+            <motion.span
+              {...fadeUp(0.2)}
+              className="block text-5xl md:text-7xl lg:text-8xl font-light tracking-tight"
+            >
+              Nurtured by
+            </motion.span>
+            <motion.span
+              {...fadeUp(0.35)}
+              className="block text-5xl md:text-7xl lg:text-8xl font-light tracking-tight italic text-forest-800"
+            >
+              Nature.
+            </motion.span>
+          </h1>
 
-          {/* Eyebrow */}
-          <motion.span
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.9, delay: 0.7 }}
-            className="block text-[0.7rem] md:text-xs uppercase tracking-[0.4em] text-forest-800/80 mb-6 md:mb-8"
-          >
-            ✦ Proudly Desi ✦
-          </motion.span>
-
-          {/* Headline — word-by-word reveal */}
-          <motion.h1
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 1 },
-              visible: {
-                opacity: 1,
-                transition: { staggerChildren: 0.18, delayChildren: 0.9 },
-              },
-            }}
-            className="font-serif text-forest-900 leading-[0.95] mb-6 md:mb-8"
-          >
-            <span className="block text-5xl md:text-7xl lg:text-8xl font-light tracking-tight">
-              {['Nurtured', 'by'].map((word, i) => (
-                <motion.span
-                  key={`${word}-${i}`}
-                  variants={{
-                    hidden: { opacity: 0, y: 26, filter: 'blur(6px)' },
-                    visible: { opacity: 1, y: 0, filter: 'blur(0px)' },
-                  }}
-                  transition={{ duration: 1, ease: [0.2, 0.8, 0.2, 1] }}
-                  className="inline-block mr-3 md:mr-4"
-                >
-                  {word}
-                </motion.span>
-              ))}
-            </span>
-            <span className="block text-5xl md:text-7xl lg:text-8xl font-light tracking-tight italic text-forest-800">
-              <motion.span
-                variants={{
-                  hidden: { opacity: 0, y: 26, filter: 'blur(6px)' },
-                  visible: { opacity: 1, y: 0, filter: 'blur(0px)' },
-                }}
-                transition={{ duration: 1.1, ease: [0.2, 0.8, 0.2, 1] }}
-                className="inline-block"
-              >
-                Nature.
-              </motion.span>
-            </span>
-          </motion.h1>
-
-          {/* Tagline */}
+          {/* Tagline — the brand's real claims, plainly said */}
           <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 1.7, ease: 'easeOut' }}
+            {...fadeUp(0.6)}
             className="text-forest-900/75 text-base md:text-lg lg:text-xl leading-relaxed mb-10 md:mb-12 max-w-md mx-auto md:mx-0"
           >
-            Honest, effective, and{' '}
-            <span className="text-forest-900 font-medium">rooted in nature</span>.
-            Pure botanical care, crafted for results you can see — and feel.
+            <span className="text-forest-900 font-medium">100% chemical-free</span> skincare
+            and haircare. Handcrafted in India, lab-tested, and made for results you can
+            see and feel.
           </motion.p>
 
           {/* CTAs */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 2, ease: 'easeOut' }}
-            className="flex flex-col sm:flex-row gap-4 items-center md:items-start sm:justify-start justify-center"
+            {...fadeUp(0.8)}
+            className="flex flex-col sm:flex-row gap-5 sm:gap-9 items-center justify-center md:justify-start"
           >
             <Link
-              href="#shop"
-              className="group relative inline-flex items-center gap-3 px-8 md:px-10 py-4 bg-forest-900 text-cream rounded-full text-xs md:text-sm uppercase tracking-[0.25em] font-medium overflow-hidden transition-all duration-500 hover:bg-forest-800 hover:shadow-[0_8px_30px_rgba(26,60,52,0.35)] hover:scale-[1.02]"
+              href="/shop"
+              className="inline-flex items-center px-9 md:px-10 py-4 bg-forest-900 text-cream rounded-full text-[0.7rem] md:text-xs uppercase tracking-[0.28em] font-medium transition-all duration-400 hover:bg-forest-800 hover:shadow-[inset_0_0_0_1px_rgba(197,160,89,0.55),0_8px_30px_rgba(26,60,52,0.25)]"
             >
-              <span className="relative z-10">Discover the Collection</span>
-              <span
-                aria-hidden="true"
-                className="relative z-10 transition-transform duration-500 group-hover:translate-x-1"
-              >
-                →
-              </span>
+              Shop the Collection
             </Link>
 
             <Link
-              href="#our-story"
-              className="text-xs md:text-sm uppercase tracking-[0.25em] text-forest-900/80 hover:text-forest-900 transition-colors py-4 underline-offset-8 hover:underline decoration-gold-500/60"
+              href="/our-story"
+              className="text-[0.7rem] md:text-xs uppercase tracking-[0.28em] font-bold text-forest-900 hover:text-forest-800 py-4 underline decoration-gold-500/70 hover:decoration-gold-500 decoration-2 underline-offset-8 transition-colors duration-300"
             >
               Our Story
             </Link>
@@ -218,23 +190,23 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Scroll cue */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 2.5 }}
-        className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 pointer-events-none"
-        aria-hidden="true"
-      >
-        <span className="text-[0.65rem] uppercase tracking-[0.4em] text-forest-900/60">
-          Scroll
-        </span>
-        <motion.div
-          animate={{ y: [0, 8, 0], opacity: [0.4, 1, 0.4] }}
-          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-          className="w-[1px] h-10 bg-forest-900/40"
-        />
-      </motion.div>
     </section>
+
+      {/* Pillar band — the brand's pillars, on solid ground right where the hero ends */}
+      <div className="bg-beige border-y border-forest-900/10">
+        <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-16">
+          <div className="py-4 md:py-5 flex flex-wrap items-center justify-center md:justify-between gap-x-8 gap-y-1.5">
+            {PILLARS.map((pillar) => (
+              <span
+                key={pillar}
+                className="text-[0.6rem] md:text-[0.7rem] uppercase tracking-[0.28em] font-semibold text-forest-900/80"
+              >
+                {pillar}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
   )
 }

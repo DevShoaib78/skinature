@@ -37,7 +37,7 @@ export default function Splash({ onComplete }: { onComplete: () => void }) {
             animate={{ scale: [1, 1.03, 1] }}
             transition={{ duration: 4, ease: "easeInOut", repeat: Infinity }}
          >
-            <Image src="/logo.png" alt="Skinature" fill className="object-contain" priority />
+            <Image src="/logo without bg.png" alt="Skinature" fill className="object-contain" priority />
          </motion.div>
          
          <motion.div

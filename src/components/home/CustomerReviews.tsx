@@ -30,7 +30,7 @@ export default function CustomerReviews() {
         >
           <Image
             src="/customerreviews.png"
-            alt="Customer Reviews - What our customers say about Skinature"
+            alt="Customer reviews: what our customers say about Skinature"
             width={1400}
             height={800}
             className="w-full h-auto rounded-2xl"

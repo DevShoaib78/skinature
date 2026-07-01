@@ -54,7 +54,7 @@ export default function ProductDetailClient({ id }: { id: string }) {
                   <div className="aspect-[4/5] bg-forest-50 rounded-[2rem] relative overflow-hidden shadow-lg">
                       <Image
                         src={product.image}
-                        alt={`${product.name} — ${product.benefit}`}
+                        alt={`${product.name}, ${product.benefit}`}
                         fill
                         className="object-cover"
                         priority

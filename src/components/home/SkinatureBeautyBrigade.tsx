@@ -1,5 +1,25 @@
 'use client'
 import { motion } from 'framer-motion'
+import Link from 'next/link'
+import { Gem, Sprout, HeartHandshake } from 'lucide-react'
+
+const PERKS = [
+  {
+    icon: Gem,
+    title: 'Exclusive Access',
+    desc: 'Be the first to discover new products, limited editions, and seasonal collections',
+  },
+  {
+    icon: Sprout,
+    title: 'Expert Tips',
+    desc: 'Learn skincare rituals and natural beauty secrets from our experts',
+  },
+  {
+    icon: HeartHandshake,
+    title: 'Community Love',
+    desc: 'Connect with like-minded individuals who share your passion for natural beauty',
+  },
+]
 
 export default function SkinatureBeautyBrigade() {
   return (
@@ -11,11 +31,11 @@ export default function SkinatureBeautyBrigade() {
 
         {/* Section Header */}
         <div className="mb-16 text-center">
-          <h2 className="font-script text-5xl md:text-7xl text-gold-600 mb-6">
+          <h2 className="font-cursive text-5xl md:text-7xl text-gold-600 mb-6">
             Skinature Beauty Brigade
           </h2>
           <div className="w-24 h-[1px] bg-gradient-to-r from-transparent via-gold-500 to-transparent mx-auto mb-8" aria-hidden="true"></div>
-          <p className="font-serif text-xl md:text-2xl text-forest-900/80 max-w-3xl mx-auto leading-relaxed">
+          <p className="font-serif font-semibold text-xl md:text-2xl text-forest-900 max-w-3xl mx-auto leading-relaxed">
             Join our community of beauty enthusiasts who embrace natural, sustainable skincare rituals
           </p>
         </div>
@@ -28,7 +48,7 @@ export default function SkinatureBeautyBrigade() {
           transition={{ duration: 0.8 }}
           className="mb-20 max-w-5xl mx-auto"
         >
-          <h3 className="font-cursive text-5xl md:text-6xl text-forest-900 mb-8">
+          <h3 className="font-cursive text-5xl md:text-6xl text-forest-900 mb-8 text-center">
             Founder&apos;s Note
           </h3>
 
@@ -42,7 +62,7 @@ export default function SkinatureBeautyBrigade() {
             </p>
 
             <p className="text-forest-900 font-bold leading-relaxed text-lg">
-              Skinature began as a simple idea between two people—a husband and wife—who shared a love for natural living and mindful self-care.
+              Skinature began as a simple idea between two people, a husband and wife, who shared a love for natural living and mindful self-care.
             </p>
 
             <p className="leading-relaxed text-lg">
@@ -78,7 +98,7 @@ export default function SkinatureBeautyBrigade() {
             </p>
 
             <p className="text-forest-900/70 leading-relaxed text-lg italic">
-              We&apos;re not here to sell quick fixes. We&apos;re here to offer time-tested care that becomes a joyful part of your daily routine—just like it has for us.
+              We&apos;re not here to sell quick fixes. We&apos;re here to offer time-tested care that becomes a joyful part of your daily routine, just like it has for us.
             </p>
 
             <p className="text-forest-900/70 leading-relaxed text-lg">
@@ -101,47 +121,37 @@ export default function SkinatureBeautyBrigade() {
 
         <div className="text-center">
 
-        {/* Placeholder Content - To be expanded */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-          {/* Card 1 */}
-          <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-8 shadow-sm hover:shadow-md transition-shadow duration-300">
-            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gold-100 flex items-center justify-center">
-              <span className="text-3xl" aria-hidden="true">✨</span>
+        {/* Member perks */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+          {PERKS.map((perk) => (
+            <div
+              key={perk.title}
+              className="group relative overflow-hidden bg-white rounded-[1.75rem] border border-forest-900/10 p-8 md:p-10 text-left shadow-[0_20px_50px_-30px_rgba(26,60,52,0.25)] transition-all duration-500 hover:-translate-y-1.5 hover:border-gold-500/40 hover:shadow-[0_30px_60px_-25px_rgba(26,60,52,0.35)]"
+            >
+              <perk.icon
+                size={120}
+                strokeWidth={0.7}
+                className="absolute -top-6 -left-6 text-gold-600/25 transition-colors duration-500 group-hover:text-gold-600/40 pointer-events-none"
+                aria-hidden="true"
+              />
+              <div className="relative pt-14">
+                <h3 className="font-serif text-2xl text-forest-900 mb-3">{perk.title}</h3>
+                <p className="text-forest-900/65 leading-relaxed text-sm md:text-base">
+                  {perk.desc}
+                </p>
+              </div>
             </div>
-            <h3 className="font-serif text-2xl text-forest-900 mb-4">Exclusive Access</h3>
-            <p className="text-forest-900/70 leading-relaxed">
-              Be the first to discover new products, limited editions, and seasonal collections
-            </p>
-          </div>
-
-          {/* Card 2 */}
-          <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-8 shadow-sm hover:shadow-md transition-shadow duration-300">
-            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gold-100 flex items-center justify-center">
-              <span className="text-3xl" aria-hidden="true">🌿</span>
-            </div>
-            <h3 className="font-serif text-2xl text-forest-900 mb-4">Expert Tips</h3>
-            <p className="text-forest-900/70 leading-relaxed">
-              Learn skincare rituals and natural beauty secrets from our experts
-            </p>
-          </div>
-
-          {/* Card 3 */}
-          <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-8 shadow-sm hover:shadow-md transition-shadow duration-300">
-            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gold-100 flex items-center justify-center">
-              <span className="text-3xl" aria-hidden="true">💚</span>
-            </div>
-            <h3 className="font-serif text-2xl text-forest-900 mb-4">Community Love</h3>
-            <p className="text-forest-900/70 leading-relaxed">
-              Connect with like-minded individuals who share your passion for natural beauty
-            </p>
-          </div>
+          ))}
         </div>
 
         {/* CTA */}
         <div className="mt-16">
-          <button className="bg-forest-900 text-cream px-12 py-4 rounded-full text-sm tracking-[0.2em] uppercase font-medium hover:bg-gold-600 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105">
+          <Link
+            href="/beauty-brigade"
+            className="inline-block bg-forest-900 text-cream px-12 py-4 rounded-full text-sm tracking-[0.2em] uppercase font-medium transition-all duration-400 hover:bg-forest-800 hover:shadow-[inset_0_0_0_1px_rgba(197,160,89,0.55),0_8px_30px_rgba(26,60,52,0.25)]"
+          >
             Join The Brigade
-          </button>
+          </Link>
         </div>
         </div>
       </div>

@@ -34,7 +34,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} | ${SITE_TAGLINE} — Premium Natural Skincare`,
+    default: `${SITE_NAME} | ${SITE_TAGLINE} | Premium Natural Skincare`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
@@ -74,20 +74,20 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: `${SITE_NAME} — ${SITE_TAGLINE} | Premium Natural Skincare`,
+    title: `${SITE_NAME} | ${SITE_TAGLINE} | Premium Natural Skincare`,
     description: SITE_DESCRIPTION,
     images: [
       {
         url: "/logo.png",
         width: 512,
         height: 512,
-        alt: `${SITE_NAME} — ${SITE_TAGLINE}`,
+        alt: `${SITE_NAME}, ${SITE_TAGLINE}`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    title: `${SITE_NAME} | ${SITE_TAGLINE}`,
     description: SITE_DESCRIPTION,
     images: ["/logo.png"],
   },
