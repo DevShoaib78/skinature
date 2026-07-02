@@ -5,12 +5,12 @@ import Link from 'next/link'
 import { Search, Download, MessageCircle, FileText } from 'lucide-react'
 import { buildOrderWhatsAppUrl } from '@/lib/whatsapp'
 import { cn } from '@/lib/utils'
-import { useAdmin } from '@/store/admin'
-import { effectiveOrders } from '@/lib/admin-metrics'
-import type { OrderStatus } from '@/lib/mock/orders'
+import { fetchAdminOrders } from '@/lib/db/admin'
+import type { OrderStatus } from '@/lib/domain'
 import { formatPaise, formatDate } from '@/lib/format'
 import { toCsv, downloadCsv } from '@/lib/csv'
 import { PageHeader, Card, OrderStatusBadge, AdminButton, adminInputClass } from '@/components/admin/ui'
+import { useAsync, AdminLoading, AdminError } from '@/components/admin/useAsync'
 
 const STATUS_FILTERS: { key: OrderStatus | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -22,18 +22,17 @@ const STATUS_FILTERS: { key: OrderStatus | 'all'; label: string }[] = [
 ]
 
 export default function OrdersClient() {
-  const orderStatus = useAdmin((s) => s.orderStatus)
+  const { data: orders, error, loading, reload } = useAsync(fetchAdminOrders)
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState<OrderStatus | 'all'>('all')
 
-  const orders = useMemo(() => effectiveOrders(orderStatus), [orderStatus])
-
   const visible = useMemo(() => {
+    if (!orders) return []
     const q = query.trim().toLowerCase()
     return orders.filter((o) => {
       if (status !== 'all' && o.status !== status) return false
       if (!q) return true
-      return [o.id, o.customer.name, o.customer.email, o.customer.phone, o.address.city]
+      return [o.orderNo, o.customer.name, o.customer.email, o.customer.phone, o.address.city]
         .join(' ')
         .toLowerCase()
         .includes(q)
@@ -48,7 +47,7 @@ export default function OrdersClient() {
         'Payment ID', 'Invoice No',
       ],
       visible.map((o) => [
-        o.id,
+        o.orderNo,
         formatDate(o.createdAt),
         o.customer.name,
         o.customer.email,
@@ -69,11 +68,14 @@ export default function OrdersClient() {
     downloadCsv(`skinature-orders-${today}.csv`, csv)
   }
 
+  if (loading) return <AdminLoading />
+  if (error || !orders) return <AdminError message={error} onRetry={reload} />
+
   return (
     <>
       <PageHeader
         title="Orders"
-        description={`${orders.length} orders in total.`}
+        description={`${orders.length} orders in total. Live data.`}
         actions={
           <AdminButton onClick={exportCsv} variant="outline">
             <Download size={14} aria-hidden="true" />
@@ -144,10 +146,10 @@ export default function OrdersClient() {
                   <tr key={order.id} className="hover:bg-forest-50/50 transition-colors">
                     <td className="py-3.5 pr-4">
                       <Link
-                        href={`/admin/orders/${order.id}`}
+                        href={`/admin/orders/${order.orderNo}`}
                         className="font-semibold text-forest-900 hover:text-gold-600 transition-colors"
                       >
-                        {order.id}
+                        {order.orderNo}
                       </Link>
                     </td>
                     <td className="py-3.5 pr-4">
@@ -182,8 +184,8 @@ export default function OrdersClient() {
                           <MessageCircle size={16} strokeWidth={2} />
                         </a>
                         <Link
-                          href={`/admin/orders/${order.id}/invoice`}
-                          aria-label={`Invoice for ${order.id}`}
+                          href={`/admin/orders/${order.orderNo}/invoice`}
+                          aria-label={`Invoice for ${order.orderNo}`}
                           title="View / download invoice"
                           className="p-2 rounded-lg text-forest-900/40 hover:text-forest-900 hover:bg-forest-50 transition-colors"
                         >

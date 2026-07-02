@@ -18,12 +18,20 @@ e-commerce store, launching at **skinature.org** (replacing the old site on that
 Positioning: honest, chemical-free, "proudly desi." **NOT Ayurvedic** — they do not
 market themselves that way.
 
-Current state: the **entire frontend is complete and runs on a realistic mock backend**
-— storefront (shop, product pages, search, cart, checkout with a mock payment sheet),
-info/policy pages, error states, and a full **admin panel at `/admin`** (mock auth,
-orders, products, inventory, customers, review moderation, analytics, settings).
-The remaining work is the **real backend swap**: Supabase, Razorpay, Resend emails,
-magic-link reviews — see `docs/DECISIONS.md` §7 for the sequence.
+Current state: **frontend complete AND the Supabase backend is live.** The storefront
+reads products/reviews from Postgres (ISR 5 min), checkout writes real orders via
+`/api/checkout` (+ `/confirm`), the admin panel runs on **real Supabase Auth** with all
+modules on live data (RLS-gated), and magic-link reviews work end to end
+(`/review/[token]`). The **only remaining stand-in is the mock payment sheet**, which
+swaps to Razorpay checkout when keys arrive; after that: Resend emails + PDF invoices +
+the 21-day review-invite scheduler, then deploy. See `docs/DECISIONS.md` §7.
+
+Backend specifics: schema/RLS/seed in `supabase/migrations/` applied via
+`node scripts/db-setup.mjs`; server data access `src/lib/db/store.ts` (service key,
+public-visibility filters), admin browser access `src/lib/db/admin.ts` (RLS enforced);
+domain types `src/lib/domain.ts`. Admin demo login: admin@skinature.org (a real auth
+user; rotate at launch). Static catalog in `data.ts` remains ONLY as build fallback +
+seed reference.
 
 ## Tech Stack
 

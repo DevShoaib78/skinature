@@ -1,4 +1,4 @@
-import type { Order } from '@/lib/mock/orders'
+import type { Order } from '@/lib/domain'
 import { formatPaise } from '@/lib/format'
 
 /**
@@ -14,7 +14,7 @@ export function buildOrderWhatsAppUrl(order: Order): string {
 
   const text =
     `Hello ${firstName}! 🌿\n\n` +
-    `Thank you for shopping with Skinature. Here is a summary of your order ${order.id}:\n\n` +
+    `Thank you for shopping with Skinature. Here is a summary of your order ${order.orderNo}:\n\n` +
     `${itemLines}\n\n` +
     `Subtotal: ${formatPaise(order.subtotalPaise)}\n` +
     `Shipping: ${formatPaise(order.shippingPaise)}\n` +

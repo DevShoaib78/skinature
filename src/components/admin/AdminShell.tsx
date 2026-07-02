@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
+import type { Session } from '@supabase/supabase-js'
 import {
   LayoutDashboard,
   Package,
@@ -20,7 +21,7 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useAdmin } from '@/store/admin'
+import { getSupabaseBrowser } from '@/lib/supabase/client'
 
 const NAV = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -61,10 +62,8 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
-function SidebarFooter() {
+function SidebarFooter({ email }: { email: string | null }) {
   const router = useRouter()
-  const logout = useAdmin((s) => s.logout)
-  const adminEmail = useAdmin((s) => s.adminEmail)
   return (
     <div className="px-3 pb-5 space-y-1 border-t border-white/10 pt-4">
       <Link
@@ -76,8 +75,8 @@ function SidebarFooter() {
         View Store
       </Link>
       <button
-        onClick={() => {
-          logout()
+        onClick={async () => {
+          await getSupabaseBrowser().auth.signOut()
           router.replace('/admin/login')
         }}
         className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-cream/60 hover:text-red-300 hover:bg-white/5 transition-colors"
@@ -85,9 +84,7 @@ function SidebarFooter() {
         <LogOut size={17} strokeWidth={1.75} aria-hidden="true" />
         Sign Out
       </button>
-      {adminEmail && (
-        <p className="px-4 pt-2 text-cream/35 text-xs truncate">{adminEmail}</p>
-      )}
+      {email && <p className="px-4 pt-2 text-cream/35 text-xs truncate">{email}</p>}
     </div>
   )
 }
@@ -95,24 +92,27 @@ function SidebarFooter() {
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
-  const hydrated = useAdmin((s) => s.hydrated)
-  const loggedIn = useAdmin((s) => s.loggedIn)
+  // undefined = still resolving, null = signed out
+  const [session, setSession] = useState<Session | null | undefined>(undefined)
   const [mobileNav, setMobileNav] = useState(false)
 
   const isLogin = pathname === '/admin/login'
 
-  // Rehydrate the persisted admin session once on mount.
   useEffect(() => {
-    useAdmin.persist.rehydrate()
-    useAdmin.setState({ hydrated: true })
+    const supabase = getSupabaseBrowser()
+    supabase.auth.getSession().then(({ data }) => setSession(data.session))
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
+      setSession(next)
+    })
+    return () => sub.subscription.unsubscribe()
   }, [])
 
   // Route guarding
   useEffect(() => {
-    if (!hydrated) return
-    if (!loggedIn && !isLogin) router.replace('/admin/login')
-    if (loggedIn && isLogin) router.replace('/admin')
-  }, [hydrated, loggedIn, isLogin, router])
+    if (session === undefined) return
+    if (!session && !isLogin) router.replace('/admin/login')
+    if (session && isLogin) router.replace('/admin')
+  }, [session, isLogin, router])
 
   // Close the mobile drawer when the route changes (adjust-state-during-render pattern).
   const [prevPath, setPrevPath] = useState(pathname)
@@ -123,7 +123,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   if (isLogin) return <>{children}</>
 
-  if (!hydrated || !loggedIn) {
+  if (!session) {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
         <div
@@ -152,7 +152,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           </p>
         </div>
         <NavLinks />
-        <SidebarFooter />
+        <SidebarFooter email={session.user.email ?? null} />
       </aside>
 
       {/* Mobile top bar */}
@@ -213,7 +213,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                 </button>
               </div>
               <NavLinks onNavigate={() => setMobileNav(false)} />
-              <SidebarFooter />
+              <SidebarFooter email={session.user.email ?? null} />
             </motion.aside>
           </>
         )}

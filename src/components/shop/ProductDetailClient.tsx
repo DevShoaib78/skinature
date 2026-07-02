@@ -20,13 +20,8 @@ import Footer from '@/components/layout/Footer'
 import { ProductCard } from '@/components/ui/ProductCard'
 import { cn } from '@/lib/utils'
 import { formatPaise, formatDate } from '@/lib/format'
-import {
-  getProductBySlug,
-  getRelatedProducts,
-  effectivePricePaise,
-  isOnSale,
-} from '@/lib/data'
-import { getReviewsForProduct } from '@/lib/mock/reviews'
+import { effectivePricePaise, isOnSale, type Product } from '@/lib/data'
+import type { Review } from '@/lib/domain'
 import { useCart } from '@/store/cart'
 
 const tabs = ['Benefits', 'Ingredients', 'Ritual'] as const
@@ -55,44 +50,20 @@ function Stars({ rating, size = 14 }: { rating: number; size?: number }) {
   )
 }
 
-export default function ProductDetailClient({ slug }: { slug: string }) {
+export default function ProductDetailClient({
+  product,
+  related,
+  reviews,
+}: {
+  product: Product
+  related: Product[]
+  reviews: Review[]
+}) {
   const [activeTab, setActiveTab] = useState<string>('Benefits')
   const [activeImage, setActiveImage] = useState(0)
   const [qty, setQty] = useState(1)
   const add = useCart((s) => s.add)
 
-  const product = getProductBySlug(slug)
-
-  if (!product) {
-    return (
-      <>
-        <Navbar />
-        <main
-          id="main-content"
-          className="pt-32 pb-24 bg-cream min-h-screen flex items-center justify-center"
-        >
-          <div className="text-center px-6">
-            <h1 className="text-4xl font-serif text-forest-900 mb-4">
-              Product Not Found
-            </h1>
-            <p className="text-forest-900/60 mb-8">
-              The product you are looking for does not exist or is no longer available.
-            </p>
-            <Link
-              href="/shop"
-              className="inline-block px-8 py-3.5 bg-forest-900 text-cream rounded-full text-xs uppercase tracking-[0.25em] font-medium hover:bg-forest-800 transition-colors"
-            >
-              Browse the Collection
-            </Link>
-          </div>
-        </main>
-        <Footer />
-      </>
-    )
-  }
-
-  const reviews = getReviewsForProduct(product.id)
-  const related = getRelatedProducts(slug)
   const price = effectivePricePaise(product)
   const outOfStock = product.stock <= 0
   const lowStock = !outOfStock && product.stock <= 10
@@ -104,7 +75,7 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   }
 
   const addToCart = () => {
-    add(product.id, qty)
+    add(product, qty)
     setQty(1)
   }
 

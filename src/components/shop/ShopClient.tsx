@@ -9,7 +9,7 @@ import { ProductCard } from '@/components/ui/ProductCard'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { cn } from '@/lib/utils'
-import { products, type Product } from '@/lib/data'
+import type { Product } from '@/lib/data'
 
 type FilterKey = 'all' | 'skin' | 'hair' | 'kits'
 type SortKey = 'featured' | 'price-asc' | 'price-desc' | 'rating'
@@ -63,7 +63,7 @@ function isFilterKey(v: string | null): v is FilterKey {
   return v === 'all' || v === 'skin' || v === 'hair' || v === 'kits'
 }
 
-function ShopContent() {
+function ShopContent({ products }: { products: Product[] }) {
   const params = useSearchParams()
   const initial = params.get('cat')
   const [filter, setFilter] = useState<FilterKey>(isFilterKey(initial) ? initial : 'all')
@@ -71,7 +71,7 @@ function ShopContent() {
 
   const visible = useMemo(
     () => sortProducts(products.filter((p) => matchesFilter(p, filter)), sort),
-    [filter, sort]
+    [products, filter, sort]
   )
 
   return (
@@ -203,12 +203,12 @@ function ShopContent() {
   )
 }
 
-export default function ShopClient() {
+export default function ShopClient({ products }: { products: Product[] }) {
   return (
     <>
       <Navbar />
       <Suspense fallback={<div className="pt-40 min-h-screen bg-cream" />}>
-        <ShopContent />
+        <ShopContent products={products} />
       </Suspense>
       <Footer />
     </>

@@ -1,31 +1,35 @@
 'use client'
 
-import { useMemo } from 'react'
-import { useAdmin } from '@/store/admin'
+import { useCallback, useMemo } from 'react'
+import { fetchAdminOrders, fetchAdminProducts, customersFromOrders } from '@/lib/db/admin'
 import {
-  effectiveOrders,
   revenueByDay,
   kpis,
   topProducts,
   categorySplit,
   regionSplit,
 } from '@/lib/admin-metrics'
-import { getMockCustomers } from '@/lib/mock/orders'
 import { formatPaise } from '@/lib/format'
 import { PageHeader, Card } from '@/components/admin/ui'
 import { RevenueLineChart, HBarList, SplitBar, StatTile } from '@/components/admin/charts'
+import { useAsync, AdminLoading, AdminError } from '@/components/admin/useAsync'
 
 export default function AnalyticsClient() {
-  const orderStatus = useAdmin((s) => s.orderStatus)
+  const fetchAll = useCallback(
+    () => Promise.all([fetchAdminOrders(), fetchAdminProducts()] as const),
+    []
+  )
+  const { data, error, loading, reload } = useAsync(fetchAll)
+  const orders = useMemo(() => data?.[0] ?? [], [data])
+  const products = useMemo(() => data?.[1] ?? [], [data])
 
-  const orders = useMemo(() => effectiveOrders(orderStatus), [orderStatus])
   const days = useMemo(() => revenueByDay(orders, 56), [orders])
   const stats = useMemo(() => kpis(orders, 30), [orders])
   const top = useMemo(() => topProducts(orders), [orders])
-  const categories = useMemo(() => categorySplit(orders), [orders])
+  const categories = useMemo(() => categorySplit(orders, products), [orders, products])
   const regions = useMemo(() => regionSplit(orders), [orders])
 
-  const customers = useMemo(() => getMockCustomers(), [])
+  const customers = useMemo(() => customersFromOrders(orders), [orders])
   const repeatRate = Math.round(
     (customers.filter((c) => c.ordersCount > 1).length / Math.max(customers.length, 1)) * 100
   )
@@ -41,11 +45,14 @@ export default function AnalyticsClient() {
       }))
   }, [orders])
 
+  if (loading) return <AdminLoading />
+  if (error || !data) return <AdminError message={error} onRetry={reload} />
+
   return (
     <>
       <PageHeader
         title="Analytics"
-        description="A deeper look at how the store is performing."
+        description="A deeper look at how the store is performing. Live data."
       />
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">

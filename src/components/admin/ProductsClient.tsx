@@ -5,7 +5,11 @@ import Image from 'next/image'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Plus, Pencil, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useAdmin } from '@/store/admin'
+import {
+  fetchAdminProducts,
+  updateAdminProduct,
+  insertAdminProduct,
+} from '@/lib/db/admin'
 import type { Product, Category } from '@/lib/data'
 import { formatPaise } from '@/lib/format'
 import {
@@ -15,6 +19,7 @@ import {
   AdminField,
   adminInputClass,
 } from '@/components/admin/ui'
+import { useAsync, AdminLoading, AdminError } from '@/components/admin/useAsync'
 
 const CATEGORIES: Category[] = ['Skin Care', 'Hair Care', 'Hair + Skin']
 
@@ -68,13 +73,12 @@ function slugify(name: string): string {
 }
 
 export default function ProductsClient() {
-  const products = useAdmin((s) => s.products)
-  const updateProduct = useAdmin((s) => s.updateProduct)
-  const addProduct = useAdmin((s) => s.addProduct)
+  const { data: products, error: loadError, loading, reload } = useAsync(fetchAdminProducts)
 
   const [editing, setEditing] = useState<Product | 'new' | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
 
   const openEdit = (p: Product) => {
     setForm(productToForm(p))
@@ -88,7 +92,7 @@ export default function ProductsClient() {
     setEditing('new')
   }
 
-  const save = () => {
+  const save = async () => {
     const price = Math.round(parseFloat(form.priceRupees) * 100)
     const sale = form.saleRupees.trim()
       ? Math.round(parseFloat(form.saleRupees) * 100)
@@ -118,25 +122,35 @@ export default function ProductsClient() {
       isActive: form.isActive,
     }
 
-    if (editing === 'new') {
-      addProduct({
-        id: `p-${Date.now()}`,
-        slug: slugify(form.name),
-        gallery: [],
-        image: '/new mockups/Hair Care Kit.webp',
-        rating: 5,
-        reviewCount: 0,
-        ingredients: '',
-        ritual: '',
-        benefits: '',
-        sortOrder: products.length + 1,
-        ...patch,
-      })
-    } else if (editing) {
-      updateProduct(editing.id, patch)
+    setSaving(true)
+    try {
+      if (editing === 'new') {
+        await insertAdminProduct({
+          slug: slugify(form.name),
+          gallery: [],
+          image: '/new mockups/Hair Care Kit.webp',
+          rating: 5,
+          reviewCount: 0,
+          ingredients: '',
+          ritual: '',
+          benefits: '',
+          sortOrder: (products?.length ?? 0) + 1,
+          ...patch,
+        })
+      } else if (editing) {
+        await updateAdminProduct(editing.id, patch)
+      }
+      setEditing(null)
+      reload()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save. Try again.')
+    } finally {
+      setSaving(false)
     }
-    setEditing(null)
   }
+
+  if (loading) return <AdminLoading />
+  if (loadError || !products) return <AdminError message={loadError} onRetry={reload} />
 
   return (
     <>
@@ -409,10 +423,14 @@ export default function ProductsClient() {
               </div>
 
               <div className="px-6 py-5 border-t border-forest-900/10 flex gap-3">
-                <AdminButton onClick={save} className="flex-1">
-                  {editing === 'new' ? 'Add Product' : 'Save Changes'}
+                <AdminButton onClick={save} disabled={saving} className="flex-1">
+                  {saving
+                    ? 'Saving...'
+                    : editing === 'new'
+                      ? 'Add Product'
+                      : 'Save Changes'}
                 </AdminButton>
-                <AdminButton variant="outline" onClick={() => setEditing(null)}>
+                <AdminButton variant="outline" onClick={() => setEditing(null)} disabled={saving}>
                   Cancel
                 </AdminButton>
               </div>

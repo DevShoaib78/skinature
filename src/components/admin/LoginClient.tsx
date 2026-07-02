@@ -7,31 +7,35 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Lock, Eye, EyeOff, KeyRound } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useAdmin, DEMO_ADMIN_EMAIL, DEMO_ADMIN_PASSWORD } from '@/store/admin'
+import { getSupabaseBrowser } from '@/lib/supabase/client'
+
+// Demo admin (a real Supabase Auth user). Rotate/remove at launch,
+// see docs/DECISIONS.md §11 Pre-Launch Checklist.
+const DEMO_ADMIN_EMAIL = 'admin@skinature.org'
+const DEMO_ADMIN_PASSWORD = 'skinature@2026'
 
 export default function LoginClient() {
   const router = useRouter()
-  const login = useAdmin((s) => s.login)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [checking, setChecking] = useState(false)
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setChecking(true)
-    // Mimic auth latency; Supabase Auth replaces this at launch.
-    setTimeout(() => {
-      const ok = login(email, password)
-      setChecking(false)
-      if (ok) {
-        router.replace('/admin')
-      } else {
-        setError('Incorrect email or password. Try the demo credentials below.')
-      }
-    }, 600)
+    const { error: authError } = await getSupabaseBrowser().auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    })
+    setChecking(false)
+    if (authError) {
+      setError('Incorrect email or password. Try the demo credentials below.')
+    } else {
+      router.replace('/admin')
+    }
   }
 
   const fillDemo = () => {
@@ -169,7 +173,7 @@ export default function LoginClient() {
               Use Demo Credentials
             </button>
             <p className="text-forest-900/40 text-xs text-center mt-3 leading-relaxed">
-              Demo mode: authentication switches to Supabase at launch.
+              Authenticated by Supabase. Demo credentials are rotated out at launch.
             </p>
           </div>
         </div>

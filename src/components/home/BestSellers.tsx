@@ -3,11 +3,9 @@ import { ProductCard } from '@/components/ui/ProductCard'
 import { Button } from '@/components/ui/Button'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { getBestSellers } from '@/lib/data'
+import type { Product } from '@/lib/data'
 
-const bestSellers = getBestSellers()
-
-export default function BestSellers() {
+export default function BestSellers({ products: bestSellers }: { products: Product[] }) {
   return (
     <section id="shop" aria-labelledby="best-sellers-heading" className="py-24 bg-cream scroll-mt-20">
       <div className="max-w-7xl mx-auto px-6">

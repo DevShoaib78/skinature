@@ -6,14 +6,15 @@ import { Search } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { ProductCard } from '@/components/ui/ProductCard'
 import { searchProducts } from '@/components/search/SearchOverlay'
+import type { Product } from '@/lib/data'
 
-export default function SearchResults() {
+export default function SearchResults({ products }: { products: Product[] }) {
   const params = useSearchParams()
   const router = useRouter()
   const initial = params.get('q') ?? ''
   const [query, setQuery] = useState(initial)
 
-  const results = useMemo(() => searchProducts(initial), [initial])
+  const results = useMemo(() => searchProducts(initial, products), [initial, products])
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()

@@ -3,14 +3,31 @@
 import Image from 'next/image'
 import { Minus, Plus, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useAdmin } from '@/store/admin'
+import { fetchAdminProducts, adjustAdminStock } from '@/lib/db/admin'
 import { PageHeader, Card } from '@/components/admin/ui'
+import { useAsync, AdminLoading, AdminError } from '@/components/admin/useAsync'
 
 const LOW_STOCK_AT = 10
 
 export default function InventoryClient() {
-  const products = useAdmin((s) => s.products)
-  const adjustStock = useAdmin((s) => s.adjustStock)
+  const { data: products, error, loading, reload, setData } = useAsync(fetchAdminProducts)
+
+  const adjustStock = async (id: string, delta: number) => {
+    if (!products) return
+    const product = products.find((p) => p.id === id)
+    if (!product) return
+    const next = Math.max(0, product.stock + delta)
+    // Optimistic update, rolled back on failure.
+    setData(products.map((p) => (p.id === id ? { ...p, stock: next } : p)))
+    try {
+      await adjustAdminStock(id, product.stock, delta)
+    } catch {
+      setData(products)
+    }
+  }
+
+  if (loading) return <AdminLoading />
+  if (error || !products) return <AdminError message={error} onRetry={reload} />
 
   const lowStock = products.filter((p) => p.isActive && p.stock <= LOW_STOCK_AT)
 

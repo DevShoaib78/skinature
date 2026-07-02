@@ -1,16 +1,25 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { getProductById, effectivePricePaise } from '@/lib/data'
+import { effectivePricePaise, type Product } from '@/lib/data'
 
+/**
+ * Cart items snapshot the product at add time (name, price, image), so the
+ * cart stays stable even if the catalog changes, and no catalog lookup is
+ * needed to render it. The server re-prices authoritatively at checkout.
+ */
 export interface CartItem {
   productId: string
+  slug: string
+  name: string
+  image: string
+  unitPricePaise: number
   qty: number
 }
 
 interface CartState {
   items: CartItem[]
   drawerOpen: boolean
-  add: (productId: string, qty?: number) => void
+  add: (product: Product, qty?: number) => void
   remove: (productId: string) => void
   setQty: (productId: string, qty: number) => void
   clear: () => void
@@ -23,14 +32,24 @@ export const useCart = create<CartState>()(
       items: [],
       drawerOpen: false,
 
-      add: (productId, qty = 1) =>
+      add: (product, qty = 1) =>
         set((state) => {
-          const existing = state.items.find((i) => i.productId === productId)
+          const existing = state.items.find((i) => i.productId === product.id)
           const items = existing
             ? state.items.map((i) =>
-                i.productId === productId ? { ...i, qty: i.qty + qty } : i
+                i.productId === product.id ? { ...i, qty: i.qty + qty } : i
               )
-            : [...state.items, { productId, qty }]
+            : [
+                ...state.items,
+                {
+                  productId: product.id,
+                  slug: product.slug,
+                  name: product.name,
+                  image: product.image,
+                  unitPricePaise: effectivePricePaise(product),
+                  qty,
+                },
+              ]
           return { items, drawerOpen: true }
         }),
 
@@ -57,6 +76,14 @@ export const useCart = create<CartState>()(
       name: 'skinature-cart',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ items: state.items }),
+      version: 1,
+      // v0 items lacked snapshots (and used catalog ids); start fresh.
+      migrate: (persisted, version) => {
+        if (version < 1 && persisted && typeof persisted === 'object') {
+          ;(persisted as { items?: CartItem[] }).items = []
+        }
+        return persisted
+      },
       // Rehydrated manually after mount (CartHydration) to avoid SSR mismatches.
       skipHydration: true,
     }
@@ -68,8 +95,5 @@ export function cartCount(items: CartItem[]): number {
 }
 
 export function cartSubtotalPaise(items: CartItem[]): number {
-  return items.reduce((sum, i) => {
-    const product = getProductById(i.productId)
-    return product ? sum + effectivePricePaise(product) * i.qty : sum
-  }, 0)
+  return items.reduce((sum, i) => sum + i.unitPricePaise * i.qty, 0)
 }

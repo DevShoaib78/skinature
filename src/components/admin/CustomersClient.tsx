@@ -3,13 +3,15 @@
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getMockCustomers } from '@/lib/mock/orders'
+import { fetchAdminOrders, customersFromOrders } from '@/lib/db/admin'
 import { formatPaise, formatDate } from '@/lib/format'
 import { PageHeader, Card, adminInputClass } from '@/components/admin/ui'
+import { useAsync, AdminLoading, AdminError } from '@/components/admin/useAsync'
 
 export default function CustomersClient() {
   const [query, setQuery] = useState('')
-  const customers = useMemo(() => getMockCustomers(), [])
+  const { data: orders, error, loading, reload } = useAsync(fetchAdminOrders)
+  const customers = useMemo(() => (orders ? customersFromOrders(orders) : []), [orders])
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -20,6 +22,9 @@ export default function CustomersClient() {
   }, [customers, query])
 
   const repeatCount = customers.filter((c) => c.ordersCount > 1).length
+
+  if (loading) return <AdminLoading />
+  if (error || !orders) return <AdminError message={error} onRetry={reload} />
 
   return (
     <>

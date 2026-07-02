@@ -1,6 +1,9 @@
 import ShopClient from "@/components/shop/ShopClient";
+import { fetchProducts } from "@/lib/db/store";
 import { SITE_NAME, SITE_URL } from "@/lib/data";
 import type { Metadata } from "next";
+
+export const revalidate = 300;
 
 const shopDescription =
   "Browse Skinature's curated collection of premium natural skincare products. Botanical serums, creams, masks, and tools, nurtured by nature and perfected for your skin.";
@@ -23,7 +26,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ShopPage() {
+export default async function ShopPage() {
+  const products = await fetchProducts();
   return (
     <>
       <script
@@ -43,7 +47,7 @@ export default function ShopPage() {
           }),
         }}
       />
-      <ShopClient />
+      <ShopClient products={products} />
     </>
   );
 }

@@ -143,12 +143,24 @@ price triggers the strikethrough treatment.
      products (pricing + sale price + stock + visibility), inventory, customers,
      review moderation, analytics (validated chart palette), settings.
    - Mock layer mirrors the Supabase schema (paise, slugs, statuses) for drop-in swap.
-2. Supabase foundation — schema, client utils, migrate products, refactor reads.
-3. Razorpay (test mode) — create-order, verify, webhook; replace the mock payment sheet.
-4. Email + PDF invoice (Resend + react-pdf), stored to Supabase Storage.
-5. Wire admin to Supabase (auth, orders, products, reviews, settings).
-6. Reviews — magic-link submit + 21-day auto-send scheduler.
-7. Deploy to Vercel; switch Razorpay to live; DNS; live webhooks.
+2. ✅ **Supabase backend — COMPLETE (2026-07-02).** Live on project `bvkzurzutwuxebrnrjqz`:
+   - Schema + RLS + grants applied (`supabase/migrations/001_initial_schema.sql`;
+     runner: `node scripts/db-setup.mjs`). Products/reviews/orders seeded.
+   - Storefront reads from Postgres (ISR 5 min); search queries via anon key;
+     sitemap from DB. Cart snapshots product data at add time.
+   - Checkout writes real orders: `POST /api/checkout` (server-computed totals,
+     stock checks) + `POST /api/checkout/confirm` (paid, invoice no, stock
+     decrement, review invites scheduled +21 days). The mock payment sheet is
+     the ONLY remaining stand-in; it flips to Razorpay checkout in step 3.
+   - Admin: real Supabase Auth (email/password; demo user admin@skinature.org,
+     rotate at launch) with all modules on live data via RLS (is_admin()).
+   - Magic-link reviews live: `/review/[token]` → single-use `submit_review` RPC
+     → pending review → admin approval. Verified by an end-to-end test.
+3. Razorpay (test mode) — create-order, verify signature, webhook; replace the
+   mock payment sheet. _(Waiting on account access from Adnan.)_
+4. Email + PDF invoice (Resend + react-pdf), stored to Supabase Storage; wire the
+   21-day review-invite auto-send (pg_cron or Vercel Cron reading `send_after`).
+5. Deploy to Vercel; switch Razorpay to live; DNS; live webhooks.
 
 ## 8. Open Items / To Brainstorm
 
@@ -165,6 +177,10 @@ price triggers the strikethrough treatment.
 - **New product images incoming** — the client has redesigned product packaging and
   will send new photography; swap `public/new mockups/` assets + product galleries
   when received.
+- **Adding a NEW product requires a redeploy** — product pages fix their slug list
+  at build time (`dynamicParams = false`) so unknown URLs return real 404s. Price,
+  stock, and content edits to existing products flow through ISR within 5 minutes.
+  Future: on-demand revalidation hook from the admin panel.
 - **Beauty Brigade membership** structure — Adnan to define.
 - **Founders' real "Our Story" copy** — `/our-story` currently carries a well-written
   placeholder; swap in Hina & Adnan's own words when provided.
@@ -176,7 +192,9 @@ price triggers the strikethrough treatment.
 - **Review auto-send scheduler** — pg_cron vs. Vercel Cron.
 - **Analytics** (Plausible / Umami / GA4) and **newsletter** destination.
 
-## 9. Data Model (direction — the mock layer mirrors this)
+## 9. Data Model (✅ implemented in `supabase/migrations/001_initial_schema.sql`;
+   note: the shipping address is snapshotted onto `orders` rather than a separate
+   `addresses` table, so an order always reflects where it actually shipped)
 
 - `products` — id, slug, name, category, price_paise, sale_price_paise?, description,
   ingredients, ritual, benefits, badge?, image_url, gallery[], is_active, sort_order,

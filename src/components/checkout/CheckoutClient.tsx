@@ -10,9 +10,16 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { cn } from '@/lib/utils'
 import { useCart, cartSubtotalPaise } from '@/store/cart'
-import { getProductById, effectivePricePaise } from '@/lib/data'
 import { formatPaise } from '@/lib/format'
 import { INDIAN_STATES, shippingPaiseForState } from '@/lib/shipping'
+
+interface PendingOrder {
+  orderId: string
+  orderNo: string
+  subtotalPaise: number
+  shippingPaise: number
+  totalPaise: number
+}
 
 interface FormState {
   email: string
@@ -94,6 +101,9 @@ export default function CheckoutClient() {
   const [errors, setErrors] = useState<Errors>({})
   const [payOpen, setPayOpen] = useState(false)
   const [processing, setProcessing] = useState(false)
+  const [placing, setPlacing] = useState(false)
+  const [apiError, setApiError] = useState('')
+  const [pendingOrder, setPendingOrder] = useState<PendingOrder | null>(null)
 
   const subtotal = cartSubtotalPaise(items)
   const shipping = form.state ? shippingPaiseForState(form.state) : null
@@ -104,7 +114,7 @@ export default function CheckoutClient() {
     if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }))
   }
 
-  const placeOrder = (e: React.FormEvent) => {
+  const placeOrder = async (e: React.FormEvent) => {
     e.preventDefault()
     const validation = validate(form)
     setErrors(validation)
@@ -114,24 +124,21 @@ export default function CheckoutClient() {
         ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
-    setPayOpen(true)
-  }
 
-  const simulate = (outcome: 'success' | 'failure') => {
-    setProcessing(true)
-    // Mimic gateway latency so the flow feels real.
-    setTimeout(() => {
-      setProcessing(false)
-      setPayOpen(false)
-      if (outcome === 'success') {
-        const orderId = `SKN-${String(Date.now()).slice(-6)}`
-        const order = {
-          id: orderId,
-          createdAt: new Date().toISOString(),
+    setApiError('')
+    setPlacing(true)
+    try {
+      // Creates the pending order with server-computed totals.
+      // The Razorpay order is created in this same call at launch.
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map((i) => ({ productId: i.productId, qty: i.qty })),
           customer: {
-            name: form.fullName.trim(),
             email: form.email.trim(),
             phone: form.phone.trim(),
+            fullName: form.fullName.trim(),
           },
           address: {
             line1: form.line1.trim(),
@@ -140,31 +147,46 @@ export default function CheckoutClient() {
             state: form.state,
             pincode: form.pincode.trim(),
           },
-          items: items
-            .map((i) => {
-              const p = getProductById(i.productId)
-              return p
-                ? {
-                    productId: p.id,
-                    name: p.name,
-                    image: p.image,
-                    qty: i.qty,
-                    unitPricePaise: effectivePricePaise(p),
-                  }
-                : null
-            })
-            .filter(Boolean),
-          subtotalPaise: subtotal,
-          shippingPaise: shipping ?? 0,
-          totalPaise: total,
-        }
-        sessionStorage.setItem('skinature-last-order', JSON.stringify(order))
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setApiError(data.error ?? 'Something went wrong. Please try again.')
+        return
+      }
+      setPendingOrder(data)
+      setPayOpen(true)
+    } catch {
+      setApiError('Could not reach the server. Check your connection and try again.')
+    } finally {
+      setPlacing(false)
+    }
+  }
+
+  const simulate = async (outcome: 'success' | 'failure') => {
+    if (!pendingOrder) return
+    setProcessing(true)
+    try {
+      const res = await fetch('/api/checkout/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: pendingOrder.orderId, outcome }),
+      })
+      const data = await res.json()
+      setProcessing(false)
+      setPayOpen(false)
+      if (outcome === 'success' && res.ok && data.order) {
+        sessionStorage.setItem('skinature-last-order', JSON.stringify(data.order))
         clear()
         router.push('/checkout/success')
       } else {
         router.push('/checkout/failure')
       }
-    }, 1400)
+    } catch {
+      setProcessing(false)
+      setPayOpen(false)
+      router.push('/checkout/failure')
+    }
   }
 
   if (items.length === 0) {
@@ -359,32 +381,28 @@ export default function CheckoutClient() {
                 </h2>
 
                 <ul className="space-y-4 mb-6">
-                  {items.map((item) => {
-                    const product = getProductById(item.productId)
-                    if (!product) return null
-                    return (
-                      <li key={item.productId} className="flex items-center gap-4">
-                        <span className="relative w-14 h-16 rounded-lg overflow-hidden bg-forest-50 flex-shrink-0">
-                          <Image
-                            src={product.image}
-                            alt={product.name}
-                            fill
-                            className="object-cover"
-                            sizes="56px"
-                          />
-                          <span className="absolute top-0 right-0 bg-forest-900 text-cream text-[10px] font-bold w-5 h-5 rounded-bl-lg flex items-center justify-center tabular-nums">
-                            {item.qty}
-                          </span>
+                  {items.map((item) => (
+                    <li key={item.productId} className="flex items-center gap-4">
+                      <span className="relative w-14 h-16 rounded-lg overflow-hidden bg-forest-50 flex-shrink-0">
+                        <Image
+                          src={item.image}
+                          alt={item.name}
+                          fill
+                          className="object-cover"
+                          sizes="56px"
+                        />
+                        <span className="absolute top-0 right-0 bg-forest-900 text-cream text-[10px] font-bold w-5 h-5 rounded-bl-lg flex items-center justify-center tabular-nums">
+                          {item.qty}
                         </span>
-                        <span className="flex-1 text-sm text-forest-900 leading-snug">
-                          {product.name}
-                        </span>
-                        <span className="text-sm font-medium text-forest-900 tabular-nums">
-                          {formatPaise(effectivePricePaise(product) * item.qty)}
-                        </span>
-                      </li>
-                    )
-                  })}
+                      </span>
+                      <span className="flex-1 text-sm text-forest-900 leading-snug">
+                        {item.name}
+                      </span>
+                      <span className="text-sm font-medium text-forest-900 tabular-nums">
+                        {formatPaise(item.unitPricePaise * item.qty)}
+                      </span>
+                    </li>
+                  ))}
                 </ul>
 
                 <dl className="space-y-2.5 text-sm border-t border-forest-900/10 pt-5">
@@ -415,12 +433,34 @@ export default function CheckoutClient() {
                   </span>
                 </div>
 
+                {apiError && (
+                  <p
+                    role="alert"
+                    className="text-red-600 text-sm bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-4"
+                  >
+                    {apiError}
+                  </p>
+                )}
+
                 <button
                   type="submit"
-                  className="w-full px-8 py-4 bg-forest-900 text-cream rounded-full text-xs uppercase tracking-[0.25em] font-medium hover:bg-forest-800 hover:shadow-[inset_0_0_0_1px_rgba(197,160,89,0.55),0_8px_30px_rgba(26,60,52,0.25)] transition-all duration-400 flex items-center justify-center gap-2.5"
+                  disabled={placing}
+                  className="w-full px-8 py-4 bg-forest-900 text-cream rounded-full text-xs uppercase tracking-[0.25em] font-medium hover:bg-forest-800 hover:shadow-[inset_0_0_0_1px_rgba(197,160,89,0.55),0_8px_30px_rgba(26,60,52,0.25)] transition-all duration-400 flex items-center justify-center gap-2.5 disabled:opacity-60"
                 >
-                  <Lock size={14} strokeWidth={2} aria-hidden="true" />
-                  Pay {formatPaise(total)}
+                  {placing ? (
+                    <>
+                      <span
+                        className="w-4 h-4 border-2 border-cream/30 border-t-cream rounded-full animate-spin"
+                        aria-hidden="true"
+                      />
+                      Preparing Order...
+                    </>
+                  ) : (
+                    <>
+                      <Lock size={14} strokeWidth={2} aria-hidden="true" />
+                      Pay {formatPaise(total)}
+                    </>
+                  )}
                 </button>
 
                 <p className="flex items-center justify-center gap-2 text-forest-900/45 text-xs mt-4">
@@ -479,8 +519,13 @@ export default function CheckoutClient() {
                     Amount Payable
                   </p>
                   <p className="font-serif text-4xl text-forest-900">
-                    {formatPaise(total)}
+                    {formatPaise(pendingOrder?.totalPaise ?? total)}
                   </p>
+                  {pendingOrder && (
+                    <p className="text-forest-900/40 text-xs mt-1.5">
+                      Order {pendingOrder.orderNo}
+                    </p>
+                  )}
                 </div>
 
                 {processing ? (

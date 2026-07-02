@@ -8,6 +8,7 @@ import Hero from '@/components/home/Hero'
 import BestSellers from '@/components/home/BestSellers'
 import AboutUs from '@/components/home/AboutUs'
 import Footer from '@/components/layout/Footer'
+import type { Product } from '@/lib/data'
 
 // Below-the-fold sections load as separate chunks.
 const BenefitsDeck = dynamic(() => import('@/components/home/BenefitsDeck'))
@@ -18,7 +19,7 @@ const SkinatureBeautyBrigade = dynamic(
 )
 const CustomerReviews = dynamic(() => import('@/components/home/CustomerReviews'))
 
-export default function HomeClient() {
+export default function HomeClient({ products }: { products: Product[] }) {
   const [loading, setLoading] = useState(true)
 
   return (
@@ -32,7 +33,7 @@ export default function HomeClient() {
             <Navbar />
             <main id="main-content">
                 <Hero />
-                <BestSellers />
+                <BestSellers products={products.slice(0, 4)} />
                 <AboutUs />
                 <BenefitsDeck />
                 <Philosophy />

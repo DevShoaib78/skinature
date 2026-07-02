@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import type { OrderStatus } from '@/lib/mock/orders'
+import type { OrderStatus } from '@/lib/domain'
 
 export function PageHeader({
   title,

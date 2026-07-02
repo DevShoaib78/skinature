@@ -64,7 +64,7 @@ export function ProductCard({
               className="bg-white text-forest-900 rounded-full w-11 h-11 flex items-center justify-center shadow-md hover:bg-forest-900 hover:text-white transition-colors"
               onClick={(e) => {
                 e.preventDefault()
-                add(product.id)
+                add(product)
               }}
             >
               <Plus size={18} strokeWidth={2} aria-hidden="true" />

@@ -6,7 +6,6 @@ import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react'
 import { useCart, cartCount, cartSubtotalPaise } from '@/store/cart'
-import { getProductById, effectivePricePaise } from '@/lib/data'
 import { formatPaise } from '@/lib/format'
 
 export default function CartDrawer() {
@@ -113,19 +112,17 @@ export default function CartDrawer() {
                 {/* Items */}
                 <ul className="flex-1 overflow-y-auto px-6 py-4 divide-y divide-forest-900/8">
                   {items.map((item) => {
-                    const product = getProductById(item.productId)
-                    if (!product) return null
-                    const unit = effectivePricePaise(product)
+                    const unit = item.unitPricePaise
                     return (
                       <li key={item.productId} className="py-4 flex gap-4">
                         <Link
-                          href={`/product/${product.slug}`}
+                          href={`/product/${item.slug}`}
                           onClick={() => setDrawer(false)}
                           className="relative w-20 h-24 rounded-xl overflow-hidden bg-forest-50 flex-shrink-0"
                         >
                           <Image
-                            src={product.image}
-                            alt={product.name}
+                            src={item.image}
+                            alt={item.name}
                             fill
                             className="object-cover"
                             sizes="80px"
@@ -135,15 +132,15 @@ export default function CartDrawer() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
                             <Link
-                              href={`/product/${product.slug}`}
+                              href={`/product/${item.slug}`}
                               onClick={() => setDrawer(false)}
                               className="font-serif text-base text-forest-900 leading-snug hover:text-gold-600 transition-colors"
                             >
-                              {product.name}
+                              {item.name}
                             </Link>
                             <button
                               onClick={() => remove(item.productId)}
-                              aria-label={`Remove ${product.name} from cart`}
+                              aria-label={`Remove ${item.name} from cart`}
                               className="text-forest-900/35 hover:text-red-600 transition-colors p-1 flex-shrink-0"
                             >
                               <Trash2 size={15} strokeWidth={1.75} />

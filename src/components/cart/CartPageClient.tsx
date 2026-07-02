@@ -7,7 +7,6 @@ import { Minus, Plus, Trash2, ShoppingBag, Leaf, FlaskConical, Heart, Shield } f
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { useCart, cartCount, cartSubtotalPaise } from '@/store/cart'
-import { getProductById, effectivePricePaise } from '@/lib/data'
 import { formatPaise } from '@/lib/format'
 import {
   SHIPPING_TELANGANA_PAISE,
@@ -90,18 +89,16 @@ export default function CartPageClient() {
               <div className="lg:col-span-2">
                 <ul className="divide-y divide-forest-900/10 border-y border-forest-900/10">
                   {items.map((item) => {
-                    const product = getProductById(item.productId)
-                    if (!product) return null
-                    const unit = effectivePricePaise(product)
+                    const unit = item.unitPricePaise
                     return (
                       <li key={item.productId} className="py-6 flex gap-5">
                         <Link
-                          href={`/product/${product.slug}`}
+                          href={`/product/${item.slug}`}
                           className="relative w-24 h-28 sm:w-28 sm:h-32 rounded-2xl overflow-hidden bg-forest-50 flex-shrink-0"
                         >
                           <Image
-                            src={product.image}
-                            alt={product.name}
+                            src={item.image}
+                            alt={item.name}
                             fill
                             className="object-cover"
                             sizes="112px"
@@ -112,18 +109,15 @@ export default function CartPageClient() {
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               <Link
-                                href={`/product/${product.slug}`}
+                                href={`/product/${item.slug}`}
                                 className="font-serif text-lg sm:text-xl text-forest-900 leading-snug hover:text-gold-600 transition-colors"
                               >
-                                {product.name}
+                                {item.name}
                               </Link>
-                              <p className="text-forest-900/45 text-xs uppercase tracking-[0.12em] mt-1">
-                                {product.category}
-                              </p>
                             </div>
                             <button
                               onClick={() => remove(item.productId)}
-                              aria-label={`Remove ${product.name} from cart`}
+                              aria-label={`Remove ${item.name} from cart`}
                               className="text-forest-900/35 hover:text-red-600 transition-colors p-1.5"
                             >
                               <Trash2 size={17} strokeWidth={1.75} />

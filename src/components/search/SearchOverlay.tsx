@@ -6,18 +6,40 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Search, X, ArrowRight } from 'lucide-react'
-import { products, effectivePricePaise } from '@/lib/data'
+import { effectivePricePaise, type Product } from '@/lib/data'
 import { formatPaise } from '@/lib/format'
+import { getSupabaseBrowser } from '@/lib/supabase/client'
+import { rowToProduct, type ProductRow } from '@/lib/db/mappers'
 
-export function searchProducts(query: string) {
+export function searchProducts(query: string, catalog: Product[]) {
   const q = query.trim().toLowerCase()
   if (!q) return []
-  return products.filter((p) =>
+  return catalog.filter((p) =>
     [p.name, p.category, p.benefit, p.description, p.ingredients]
       .join(' ')
       .toLowerCase()
       .includes(q)
   )
+}
+
+/** Catalog fetch for instant search, cached per tab. */
+let catalogPromise: Promise<Product[]> | null = null
+function loadCatalog(): Promise<Product[]> {
+  if (!catalogPromise) {
+    catalogPromise = (async () => {
+      const { data, error } = await getSupabaseBrowser()
+        .from('products')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order')
+      if (error) throw new Error(error.message)
+      return ((data ?? []) as ProductRow[]).map(rowToProduct)
+    })()
+    catalogPromise.catch(() => {
+      catalogPromise = null
+    })
+  }
+  return catalogPromise
 }
 
 export default function SearchOverlay({
@@ -28,10 +50,27 @@ export default function SearchOverlay({
   onClose: () => void
 }) {
   const [query, setQuery] = useState('')
+  const [catalog, setCatalog] = useState<Product[] | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
-  const results = searchProducts(query)
+  useEffect(() => {
+    if (open && !catalog) {
+      let cancelled = false
+      loadCatalog()
+        .then((list) => {
+          if (!cancelled) setCatalog(list)
+        })
+        .catch(() => {
+          // Search degrades gracefully; the /search page still works server-side.
+        })
+      return () => {
+        cancelled = true
+      }
+    }
+  }, [open, catalog])
+
+  const results = catalog ? searchProducts(query, catalog) : []
 
   // Clear the query on close so the overlay always opens fresh.
   const close = useCallback(() => {
@@ -132,6 +171,10 @@ export default function SearchOverlay({
                       )
                     )}
                   </div>
+                </div>
+              ) : !catalog ? (
+                <div className="py-12 text-center" role="status" aria-label="Loading products">
+                  <span className="inline-block w-8 h-8 border-2 border-forest-900/15 border-t-forest-900 rounded-full animate-spin" />
                 </div>
               ) : results.length === 0 ? (
                 <div className="text-center py-12">

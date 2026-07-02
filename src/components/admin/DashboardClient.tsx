@@ -3,33 +3,30 @@
 import { useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
-import { useAdmin } from '@/store/admin'
-import {
-  effectiveOrders,
-  revenueByDay,
-  kpis,
-  topProducts,
-  regionSplit,
-} from '@/lib/admin-metrics'
+import { fetchAdminOrders } from '@/lib/db/admin'
+import { revenueByDay, kpis, topProducts, regionSplit } from '@/lib/admin-metrics'
 import { formatPaise, formatDate } from '@/lib/format'
 import { PageHeader, Card, OrderStatusBadge } from '@/components/admin/ui'
 import { RevenueLineChart, HBarList, SplitBar, StatTile } from '@/components/admin/charts'
+import { useAsync, AdminLoading, AdminError } from '@/components/admin/useAsync'
 
 export default function DashboardClient() {
-  const orderStatus = useAdmin((s) => s.orderStatus)
+  const { data: orders, error, loading, reload } = useAsync(fetchAdminOrders)
 
-  const orders = useMemo(() => effectiveOrders(orderStatus), [orderStatus])
-  const days = useMemo(() => revenueByDay(orders, 30), [orders])
-  const stats = useMemo(() => kpis(orders, 30), [orders])
-  const top = useMemo(() => topProducts(orders).slice(0, 5), [orders])
-  const regions = useMemo(() => regionSplit(orders), [orders])
-  const recent = orders.slice(0, 6)
+  const days = useMemo(() => (orders ? revenueByDay(orders, 30) : []), [orders])
+  const stats = useMemo(() => (orders ? kpis(orders, 30) : null), [orders])
+  const top = useMemo(() => (orders ? topProducts(orders).slice(0, 5) : []), [orders])
+  const regions = useMemo(() => (orders ? regionSplit(orders) : []), [orders])
+  const recent = orders?.slice(0, 6) ?? []
+
+  if (loading) return <AdminLoading />
+  if (error || !orders || !stats) return <AdminError message={error} onRetry={reload} />
 
   return (
     <>
       <PageHeader
         title="Dashboard"
-        description="Store performance over the last 30 days."
+        description="Store performance over the last 30 days. Live data."
       />
 
       {/* KPIs */}
@@ -102,10 +99,10 @@ export default function DashboardClient() {
                 <tr key={order.id} className="hover:bg-forest-50/50 transition-colors">
                   <td className="py-3.5 pr-4">
                     <Link
-                      href={`/admin/orders/${order.id}`}
+                      href={`/admin/orders/${order.orderNo}`}
                       className="font-semibold text-forest-900 hover:text-gold-600 transition-colors"
                     >
-                      {order.id}
+                      {order.orderNo}
                     </Link>
                   </td>
                   <td className="py-3.5 pr-4 text-forest-900/75">

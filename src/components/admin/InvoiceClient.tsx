@@ -1,27 +1,28 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft, Printer } from 'lucide-react'
-import { useAdmin } from '@/store/admin'
-import { getOrderById } from '@/lib/mock/orders'
+import { fetchAdminOrderByNo, fetchAdminSettings } from '@/lib/db/admin'
 import { formatPaise, formatDate } from '@/lib/format'
 import { AdminButton } from '@/components/admin/ui'
+import { useAsync, AdminLoading, AdminError } from '@/components/admin/useAsync'
 
 /**
- * Printable invoice view. At launch this same layout renders to PDF
- * (react-pdf) and is emailed to the customer + stored in Supabase Storage.
+ * Printable invoice view over live order data. At launch this same layout
+ * renders to PDF (react-pdf) and is emailed to the customer + stored in
+ * Supabase Storage.
  */
-export default function InvoiceClient({ orderId }: { orderId: string }) {
-  const orderStatus = useAdmin((s) => s.orderStatus)
-  const settings = useAdmin((s) => s.settings)
-
-  const order = useMemo(() => {
-    const base = getOrderById(orderId)
-    if (!base) return undefined
-    return orderStatus[orderId] ? { ...base, status: orderStatus[orderId] } : base
-  }, [orderId, orderStatus])
+export default function InvoiceClient({ orderId: orderNo }: { orderId: string }) {
+  const fetchAll = useCallback(
+    async () =>
+      Promise.all([fetchAdminOrderByNo(orderNo), fetchAdminSettings()] as const),
+    [orderNo]
+  )
+  const { data, error, loading, reload } = useAsync(fetchAll)
+  const order = data?.[0] ?? null
+  const settings = data?.[1] ?? null
 
   // "Download PDF" links land here with ?print=1: open the save dialog directly.
   useEffect(() => {
@@ -32,7 +33,10 @@ export default function InvoiceClient({ orderId }: { orderId: string }) {
     }
   }, [order])
 
-  if (!order) {
+  if (loading) return <AdminLoading />
+  if (error) return <AdminError message={error} onRetry={reload} />
+
+  if (!order || !settings) {
     return (
       <div className="text-center py-24">
         <p className="font-serif text-3xl text-forest-900 mb-6">Order not found</p>
@@ -52,7 +56,7 @@ export default function InvoiceClient({ orderId }: { orderId: string }) {
       {/* Toolbar (hidden in print) */}
       <div className="flex items-center justify-between mb-6 print:hidden">
         <Link
-          href={`/admin/orders/${order.id}`}
+          href={`/admin/orders/${order.orderNo}`}
           className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-forest-900/50 hover:text-forest-900 transition-colors"
         >
           <ArrowLeft size={13} aria-hidden="true" />
@@ -95,7 +99,7 @@ export default function InvoiceClient({ orderId }: { orderId: string }) {
               <br />
               {formatDate(order.createdAt)}
               <br />
-              Order {order.id}
+              Order {order.orderNo}
             </p>
           </div>
         </div>
@@ -143,8 +147,8 @@ export default function InvoiceClient({ orderId }: { orderId: string }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-forest-900/6">
-            {order.items.map((item) => (
-              <tr key={item.productId}>
+            {order.items.map((item, i) => (
+              <tr key={`${item.productId}-${i}`}>
                 <td className="py-3.5 pr-4 text-forest-900">{item.name}</td>
                 <td className="py-3.5 pr-4 text-right text-forest-900/70 tabular-nums">
                   {formatPaise(item.unitPricePaise)}

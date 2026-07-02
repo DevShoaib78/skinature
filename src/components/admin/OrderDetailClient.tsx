@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useCallback, useState } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft,
@@ -13,9 +13,15 @@ import {
   PackageCheck,
   CheckCircle2,
   Download,
+  Copy,
+  Check,
 } from 'lucide-react'
-import { useAdmin } from '@/store/admin'
-import { getOrderById, type OrderStatus } from '@/lib/mock/orders'
+import {
+  fetchAdminOrderByNo,
+  updateOrderStatus,
+  fetchInvitesForOrder,
+} from '@/lib/db/admin'
+import type { OrderStatus, ReviewInvite } from '@/lib/domain'
 import { buildOrderWhatsAppUrl } from '@/lib/whatsapp'
 import { formatPaise, formatDate } from '@/lib/format'
 import {
@@ -25,6 +31,7 @@ import {
   AdminButton,
   adminInputClass,
 } from '@/components/admin/ui'
+import { useAsync, AdminLoading, AdminError } from '@/components/admin/useAsync'
 
 const STATUSES: OrderStatus[] = ['pending', 'paid', 'shipped', 'delivered', 'cancelled']
 
@@ -36,22 +43,65 @@ const NEXT_STEP: Partial<
   shipped: { to: 'delivered', label: 'Mark as Delivered', icon: PackageCheck },
 }
 
-export default function OrderDetailClient({ orderId }: { orderId: string }) {
-  const orderStatus = useAdmin((s) => s.orderStatus)
-  const setOrderStatus = useAdmin((s) => s.setOrderStatus)
+function InviteRow({ invite }: { invite: ReviewInvite }) {
+  const [copied, setCopied] = useState(false)
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/review/${invite.token}`)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Clipboard unavailable; the token is still visible via the input fallback below.
+    }
+  }
+  return (
+    <li className="py-3 flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-forest-900 text-sm font-medium truncate">{invite.productName}</p>
+        <p className="text-forest-900/45 text-xs mt-0.5">
+          {invite.usedAt
+            ? `Review submitted ${formatDate(invite.usedAt)}`
+            : `Auto-send scheduled ${formatDate(invite.sendAfter)}`}
+        </p>
+      </div>
+      {invite.usedAt ? (
+        <span className="inline-flex items-center gap-1.5 text-forest-700 text-[0.65rem] uppercase tracking-[0.08em] font-semibold flex-shrink-0">
+          <CheckCircle2 size={13} aria-hidden="true" />
+          Used
+        </span>
+      ) : (
+        <button
+          onClick={copy}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-forest-900/15 bg-white rounded-lg text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-forest-900/70 hover:border-forest-900 hover:text-forest-900 transition-colors flex-shrink-0"
+        >
+          {copied ? <Check size={12} aria-hidden="true" /> : <Copy size={12} aria-hidden="true" />}
+          {copied ? 'Copied' : 'Copy link'}
+        </button>
+      )}
+    </li>
+  )
+}
 
-  const order = useMemo(() => {
-    const base = getOrderById(orderId)
-    if (!base) return undefined
-    return orderStatus[orderId] ? { ...base, status: orderStatus[orderId] } : base
-  }, [orderId, orderStatus])
+export default function OrderDetailClient({ orderId: orderNo }: { orderId: string }) {
+  const fetchOrder = useCallback(() => fetchAdminOrderByNo(orderNo), [orderNo])
+  const { data: order, error, loading, reload, setData } = useAsync(fetchOrder)
+  const [savingStatus, setSavingStatus] = useState(false)
+
+  const invitesFetch = useCallback(
+    async () => (order ? fetchInvitesForOrder(order.id) : []),
+    [order]
+  )
+  const { data: invites } = useAsync(invitesFetch)
+
+  if (loading) return <AdminLoading />
+  if (error) return <AdminError message={error} onRetry={reload} />
 
   if (!order) {
     return (
       <div className="text-center py-24">
         <p className="font-serif text-3xl text-forest-900 mb-3">Order not found</p>
         <p className="text-forest-900/55 text-sm mb-8">
-          No order with ID {orderId} exists.
+          No order with ID {orderNo} exists.
         </p>
         <Link
           href="/admin/orders"
@@ -64,7 +114,21 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
     )
   }
 
+  const setStatus = async (status: OrderStatus) => {
+    setSavingStatus(true)
+    const previous = order
+    setData({ ...order, status })
+    try {
+      await updateOrderStatus(order.id, status)
+    } catch {
+      setData(previous)
+    } finally {
+      setSavingStatus(false)
+    }
+  }
+
   const paid = order.status !== 'pending' && order.status !== 'cancelled'
+  const next = NEXT_STEP[order.status]
 
   return (
     <>
@@ -80,7 +144,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-4">
             <h1 className="font-serif text-3xl md:text-4xl text-forest-900">
-              {order.id}
+              {order.orderNo}
             </h1>
             <OrderStatusBadge status={order.status} />
           </div>
@@ -95,14 +159,14 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
               Send WhatsApp
             </a>
             <Link
-              href={`/admin/orders/${order.id}/invoice`}
+              href={`/admin/orders/${order.orderNo}/invoice`}
               className="inline-flex items-center gap-2 px-4 py-2.5 border border-forest-900/20 bg-white text-forest-900 rounded-xl text-xs font-semibold uppercase tracking-[0.1em] hover:border-forest-900 transition-colors"
             >
               <FileText size={15} aria-hidden="true" />
               View Invoice
             </Link>
             <Link
-              href={`/admin/orders/${order.id}/invoice?print=1`}
+              href={`/admin/orders/${order.orderNo}/invoice?print=1`}
               className="inline-flex items-center gap-2 px-4 py-2.5 border border-forest-900/20 bg-white text-forest-900 rounded-xl text-xs font-semibold uppercase tracking-[0.1em] hover:border-forest-900 transition-colors"
             >
               <Download size={15} aria-hidden="true" />
@@ -120,8 +184,8 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
         <div className="xl:col-span-2 space-y-6">
           <Card title="Items">
             <ul className="divide-y divide-forest-900/6">
-              {order.items.map((item) => (
-                <li key={item.productId} className="py-3.5 flex items-center justify-between gap-4">
+              {order.items.map((item, i) => (
+                <li key={`${item.productId}-${i}`} className="py-3.5 flex items-center justify-between gap-4">
                   <div>
                     <p className="text-forest-900 font-medium text-sm">{item.name}</p>
                     <p className="text-forest-900/45 text-xs mt-0.5">
@@ -165,7 +229,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
                   Method
                 </dt>
                 <dd className="text-forest-900 font-medium">
-                  {paid ? 'Prepaid (Razorpay)' : order.status === 'pending' ? 'Awaiting payment' : 'Not charged'}
+                  {paid ? 'Prepaid' : order.status === 'pending' ? 'Awaiting payment' : 'Not charged'}
                 </dd>
               </div>
               <div>
@@ -184,40 +248,48 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
               </div>
             </dl>
           </Card>
+
+          {/* Review links (magic-link flow) */}
+          {paid && invites && invites.length > 0 && (
+            <Card title="Review Links">
+              <ul className="divide-y divide-forest-900/6">
+                {invites.map((invite) => (
+                  <InviteRow key={invite.id} invite={invite} />
+                ))}
+              </ul>
+              <p className="text-forest-900/40 text-xs mt-4 leading-relaxed">
+                Each link lets this customer review that product without logging in.
+                Links auto-send by email 21 days after the order once email goes live;
+                until then, copy and share manually.
+              </p>
+            </Card>
+          )}
         </div>
 
         {/* Customer + status */}
         <div className="space-y-6">
           <Card title="Fulfilment">
-            {(() => {
-              const next = NEXT_STEP[order.status]
-              if (next) {
-                const Icon = next.icon
-                return (
-                  <AdminButton
-                    onClick={() => setOrderStatus(order.id, next.to)}
-                    className="w-full mb-4 py-3.5"
-                  >
-                    <Icon size={16} aria-hidden="true" />
-                    {next.label}
-                  </AdminButton>
-                )
-              }
-              if (order.status === 'delivered') {
-                return (
-                  <p className="flex items-center justify-center gap-2 w-full mb-4 py-3 rounded-xl bg-forest-50 border border-forest-100 text-forest-800 text-xs font-semibold uppercase tracking-[0.1em]">
-                    <CheckCircle2 size={15} aria-hidden="true" />
-                    Delivered
-                  </p>
-                )
-              }
-              return null
-            })()}
+            {next ? (
+              <AdminButton
+                onClick={() => setStatus(next.to)}
+                disabled={savingStatus}
+                className="w-full mb-4 py-3.5"
+              >
+                <next.icon size={16} aria-hidden="true" />
+                {next.label}
+              </AdminButton>
+            ) : order.status === 'delivered' ? (
+              <p className="flex items-center justify-center gap-2 w-full mb-4 py-3 rounded-xl bg-forest-50 border border-forest-100 text-forest-800 text-xs font-semibold uppercase tracking-[0.1em]">
+                <CheckCircle2 size={15} aria-hidden="true" />
+                Delivered
+              </p>
+            ) : null}
 
             <AdminField label="Or set status manually">
               <select
                 value={order.status}
-                onChange={(e) => setOrderStatus(order.id, e.target.value as OrderStatus)}
+                disabled={savingStatus}
+                onChange={(e) => setStatus(e.target.value as OrderStatus)}
                 className={adminInputClass}
               >
                 {STATUSES.map((s) => (
@@ -228,8 +300,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
               </select>
             </AdminField>
             <p className="text-forest-900/40 text-xs mt-3 leading-relaxed">
-              Changes save instantly. At launch, status updates also trigger
-              customer notifications.
+              Changes save to the live database instantly.
             </p>
           </Card>
 

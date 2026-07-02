@@ -3,11 +3,11 @@
 import { useMemo, useState } from 'react'
 import { Star, Check, EyeOff, BadgeCheck, Send } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useAdmin } from '@/store/admin'
-import { allReviews, type ReviewStatus } from '@/lib/mock/reviews'
-import { getProductById } from '@/lib/data'
+import { fetchAdminReviews, setAdminReviewStatus } from '@/lib/db/admin'
+import type { ReviewStatus } from '@/lib/domain'
 import { formatDate } from '@/lib/format'
 import { PageHeader, Card, AdminButton } from '@/components/admin/ui'
+import { useAsync, AdminLoading, AdminError } from '@/components/admin/useAsync'
 
 const TABS: { key: ReviewStatus; label: string }[] = [
   { key: 'pending', label: 'Pending' },
@@ -16,19 +16,27 @@ const TABS: { key: ReviewStatus; label: string }[] = [
 ]
 
 export default function ReviewsClient() {
-  const reviewStatus = useAdmin((s) => s.reviewStatus)
-  const setReviewStatus = useAdmin((s) => s.setReviewStatus)
+  const { data, error, loading, reload, setData } = useAsync(fetchAdminReviews)
   const [tab, setTab] = useState<ReviewStatus>('pending')
   const [inviteSent, setInviteSent] = useState(false)
 
-  const reviews = useMemo(
-    () =>
-      allReviews.map((r) => ({
-        ...r,
-        status: reviewStatus[r.id] ?? r.status,
-      })),
-    [reviewStatus]
-  )
+  const reviews = useMemo(() => data?.reviews ?? [], [data])
+  const productNames = data?.productNames ?? {}
+
+  const setReviewStatus = async (reviewId: string, status: ReviewStatus) => {
+    if (!data) return
+    const previous = data
+    // Optimistic update, rolled back on failure.
+    setData({
+      ...data,
+      reviews: data.reviews.map((r) => (r.id === reviewId ? { ...r, status } : r)),
+    })
+    try {
+      await setAdminReviewStatus(reviewId, status)
+    } catch {
+      setData(previous)
+    }
+  }
 
   const counts = useMemo(() => {
     const c: Record<ReviewStatus, number> = { pending: 0, approved: 0, hidden: 0 }
@@ -39,6 +47,9 @@ export default function ReviewsClient() {
   const visible = reviews
     .filter((r) => r.status === tab)
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+
+  if (loading) return <AdminLoading />
+  if (error || !data) return <AdminError message={error} onRetry={reload} />
 
   return (
     <>
@@ -89,7 +100,7 @@ export default function ReviewsClient() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {visible.map((review) => {
-            const product = getProductById(review.productId)
+            const productName = productNames[review.productId]
             return (
               <Card key={review.id}>
                 <div className="flex items-start justify-between gap-4 mb-3">
@@ -104,7 +115,7 @@ export default function ReviewsClient() {
                       )}
                     </p>
                     <p className="text-forest-900/45 text-xs mt-0.5">
-                      {product?.name ?? 'Unknown product'} · {formatDate(review.createdAt)}
+                      {productName ?? 'Unknown product'} · {formatDate(review.createdAt)}
                     </p>
                   </div>
                   <span className="inline-flex items-center gap-1 text-gold-500 flex-shrink-0">
@@ -149,9 +160,10 @@ export default function ReviewsClient() {
       )}
 
       <p className="text-forest-900/40 text-xs mt-6 leading-relaxed max-w-2xl">
-        At launch, review links go out automatically 21 days after each order, and the
-        &ldquo;Send review links&rdquo; action emails a magic link per purchased product.
-        Approved reviews appear on the product page immediately.
+        Review links are created automatically when an order is paid and are scheduled
+        to auto-send 21 days later (email goes live with Resend). Until then, copy a
+        customer&apos;s link from their order page. Approved reviews appear on the
+        product page within a few minutes.
       </p>
     </>
   )

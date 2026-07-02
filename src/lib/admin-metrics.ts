@@ -1,21 +1,13 @@
 /**
- * Derived analytics over the mock orders, honouring any status overrides
- * the admin has made. Swaps to SQL aggregates once Supabase lands.
+ * Derived analytics over orders fetched from the database.
+ * Computed client-side for now; swaps to SQL aggregates if volume demands it.
  */
 
-import { mockOrders, type Order, type OrderStatus } from '@/lib/mock/orders'
-import { getProductById } from '@/lib/data'
+import type { Order, OrderStatus } from '@/lib/domain'
+import type { Product } from '@/lib/data'
 
 /** Statuses that count as realised revenue. */
 const REVENUE_STATUSES: OrderStatus[] = ['paid', 'shipped', 'delivered']
-
-export function effectiveOrders(
-  overrides: Record<string, OrderStatus>
-): Order[] {
-  return mockOrders.map((o) =>
-    overrides[o.id] ? { ...o, status: overrides[o.id] } : o
-  )
-}
 
 /** The mock dataset's "today" (newest order date). */
 export function anchorDate(orders: Order[]): Date {
@@ -117,13 +109,14 @@ export function topProducts(orders: Order[]): ProductStat[] {
   for (const order of orders) {
     if (!REVENUE_STATUSES.includes(order.status)) continue
     for (const item of order.items) {
-      const existing = byId.get(item.productId)
+      const key = item.productId ?? item.name
+      const existing = byId.get(key)
       if (existing) {
         existing.qty += item.qty
         existing.revenuePaise += item.lineTotalPaise
       } else {
-        byId.set(item.productId, {
-          productId: item.productId,
+        byId.set(key, {
+          productId: key,
           name: item.name,
           qty: item.qty,
           revenuePaise: item.lineTotalPaise,
@@ -153,13 +146,13 @@ export function regionSplit(orders: Order[]): Split[] {
   ]
 }
 
-export function categorySplit(orders: Order[]): Split[] {
+export function categorySplit(orders: Order[], products: Product[]): Split[] {
+  const categoryById = new Map(products.map((p) => [p.id, p.category]))
   const byCategory = new Map<string, number>()
   for (const order of orders) {
     if (!REVENUE_STATUSES.includes(order.status)) continue
     for (const item of order.items) {
-      const product = getProductById(item.productId)
-      const category = product?.category ?? 'Other'
+      const category = (item.productId && categoryById.get(item.productId)) ?? 'Other'
       byCategory.set(category, (byCategory.get(category) ?? 0) + item.lineTotalPaise)
     }
   }

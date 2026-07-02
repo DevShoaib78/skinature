@@ -1,4 +1,5 @@
 import HomeClient from "@/components/home/HomeClient";
+import { fetchProducts } from "@/lib/db/store";
 import {
   SITE_NAME,
   SITE_TAGLINE,
@@ -8,6 +9,8 @@ import {
   YOUTUBE_URL,
 } from "@/lib/data";
 import type { Metadata } from "next";
+
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: `${SITE_NAME} | ${SITE_TAGLINE} | Premium Natural Skincare`,
@@ -23,7 +26,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Home() {
+export default async function Home() {
+  const products = await fetchProducts();
   return (
     <>
       <script
@@ -57,7 +61,7 @@ export default function Home() {
           }),
         }}
       />
-      <HomeClient />
+      <HomeClient products={products} />
     </>
   );
 }
