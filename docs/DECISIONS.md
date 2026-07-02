@@ -92,8 +92,12 @@ price triggers the strikethrough treatment.
    **state**) → server creates Razorpay order → customer pays → server verifies signature
    → persist paid order → send confirmation + PDF invoice email → order appears in admin.
 5. **Invoice** — PDF (react-pdf) emailed via Resend to the customer + an admin
-   copy/notification; stored in Supabase Storage for re-download. _Needs business legal
-   details (legal name, address, GSTIN if any) — OPEN._
+   copy/notification; stored in Supabase Storage for re-download. **Business legal
+   details (provided by Adnan, 2026-07-02, wired into the admin settings defaults):**
+   - Company: **Nurtured by Nature Products**
+   - GSTIN: **36AAZFN8373Q1ZU**
+   - Address: Plot No. 509-J-III, Road No. 86, Near Lotus Pond, Jubilee Hills,
+     Hyderabad - 500096, Telangana, India
 6. **WhatsApp (manual, no API)** — from the admin order view, a WhatsApp button opens
    click-to-chat (`wa.me`) to the customer's number, **pre-filled with a text message**
    built from their order (greeting + itemised products + total + tappable invoice-PDF
@@ -115,8 +119,14 @@ price triggers the strikethrough treatment.
    Brigade" → `/beauty-brigade` page showing "We'll announce soon"** _(✅ built, noindex
    until the program is real)_. The actual membership/loyalty program is future scope
    (Adnan to define).
-10. **SEO & responsiveness** — strong on-page + technical SEO; excellent responsiveness on
-    mobile / tablet / desktop. Fix the existing ₹-vs-USD bug in product structured data.
+10. **SEO & AEO & responsiveness** — strong on-page + technical SEO; excellent
+    responsiveness on mobile / tablet / desktop. ₹-vs-USD structured-data bug fixed.
+    **AEO (Answer Engine Optimization) is in scope alongside SEO** (per Shoaib,
+    2026-07-02): optimize for AI answer engines (Google AI Overviews, ChatGPT,
+    Perplexity). Already in place: FAQPage/Product/Organization/Breadcrumb schema,
+    answer-shaped FAQ copy, semantic HTML. Still to do before launch: `llms.txt`,
+    consistent business NAP across pages, question-styled headings where natural,
+    and a post-launch check of how AI engines answer "Skinature" queries.
 
 ## 7. Execution Order (all-in, but sensible sequence)
 
@@ -152,7 +162,9 @@ price triggers the strikethrough treatment.
   International + multi-currency as a fast-follow. _(Questions sent to Adnan 2026-07-02 —
   awaiting his answers on regions/currencies, localized vs. FX, intl shipping, Razorpay
   International eligibility, and duties.)_
-- **Business legal details for invoice** — legal name, address, GSTIN (if registered).
+- **New product images incoming** — the client has redesigned product packaging and
+  will send new photography; swap `public/new mockups/` assets + product galleries
+  when received.
 - **Beauty Brigade membership** structure — Adnan to define.
 - **Founders' real "Our Story" copy** — `/our-story` currently carries a well-written
   placeholder; swap in Hina & Adnan's own words when provided.
@@ -188,7 +200,7 @@ price triggers the strikethrough treatment.
 | Need | From | Status |
 |------|------|--------|
 | Supabase project + keys | Shoaib (client creds) | ✅ done — `bvkzurzutwuxebrnrjqz`, ap-south-1 |
-| Razorpay test keys + webhook secret | Adnan | to request |
+| Razorpay access | Adnan | ask for a team-member invite (Developer role) OR test-mode Key ID + Secret; NEVER his dashboard password |
 | Razorpay International enabled | Adnan / Razorpay | questions sent to Adnan |
 | Business legal details (invoice) | Adnan | open |
 | Resend account + skinature.com DNS | Shoaib + domain owner | later |

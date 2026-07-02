@@ -47,12 +47,14 @@ interface AdminState {
   updateSettings: (patch: Partial<AdminSettings>) => void
 }
 
+// Real business details provided by the client (2026-07-02). Appear on invoices.
 const DEFAULT_SETTINGS: AdminSettings = {
   shippingTelanganaPaise: SHIPPING_TELANGANA_PAISE,
   shippingRestPaise: SHIPPING_REST_OF_INDIA_PAISE,
-  businessName: 'Skinature',
-  businessAddress: 'Hyderabad, Telangana, India',
-  gstin: '',
+  businessName: 'Nurtured by Nature Products',
+  businessAddress:
+    'Plot No. 509-J-III, Road No. 86, Near Lotus Pond, Jubilee Hills, Hyderabad - 500096, Telangana, India',
+  gstin: '36AAZFN8373Q1ZU',
   notifyEmail: DEMO_ADMIN_EMAIL,
 }
 
@@ -108,6 +110,14 @@ export const useAdmin = create<AdminState>()(
     {
       name: 'skinature-admin',
       storage: createJSONStorage(() => localStorage),
+      version: 1,
+      // v0 → v1: adopt the client's real business details over the old placeholders.
+      migrate: (persisted, version) => {
+        if (version < 1 && persisted && typeof persisted === 'object') {
+          ;(persisted as { settings?: AdminSettings }).settings = DEFAULT_SETTINGS
+        }
+        return persisted
+      },
       partialize: (state) => ({
         loggedIn: state.loggedIn,
         adminEmail: state.adminEmail,

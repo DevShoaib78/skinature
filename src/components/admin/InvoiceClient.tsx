@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft, Printer } from 'lucide-react'
@@ -22,6 +22,15 @@ export default function InvoiceClient({ orderId }: { orderId: string }) {
     if (!base) return undefined
     return orderStatus[orderId] ? { ...base, status: orderStatus[orderId] } : base
   }, [orderId, orderStatus])
+
+  // "Download PDF" links land here with ?print=1: open the save dialog directly.
+  useEffect(() => {
+    if (!order) return
+    if (new URLSearchParams(window.location.search).get('print') === '1') {
+      const t = setTimeout(() => window.print(), 450)
+      return () => clearTimeout(t)
+    }
+  }, [order])
 
   if (!order) {
     return (

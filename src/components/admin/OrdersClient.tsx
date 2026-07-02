@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Search, Download } from 'lucide-react'
+import { Search, Download, MessageCircle, FileText } from 'lucide-react'
+import { buildOrderWhatsAppUrl } from '@/lib/whatsapp'
 import { cn } from '@/lib/utils'
 import { useAdmin } from '@/store/admin'
 import { effectiveOrders } from '@/lib/admin-metrics'
@@ -125,7 +126,7 @@ export default function OrdersClient() {
           </p>
         ) : (
           <div className="overflow-x-auto -mx-5 md:-mx-6 px-5 md:px-6">
-            <table className="w-full text-sm min-w-[760px]">
+            <table className="w-full text-sm min-w-[840px]">
               <thead>
                 <tr className="text-left text-forest-900/45 text-xs uppercase tracking-[0.1em] border-b border-forest-900/10">
                   <th className="py-3 pr-4 font-semibold">Order</th>
@@ -134,7 +135,8 @@ export default function OrdersClient() {
                   <th className="py-3 pr-4 font-semibold">Date</th>
                   <th className="py-3 pr-4 font-semibold">Items</th>
                   <th className="py-3 pr-4 font-semibold">Total</th>
-                  <th className="py-3 font-semibold">Status</th>
+                  <th className="py-3 pr-4 font-semibold">Status</th>
+                  <th className="py-3 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-forest-900/6">
@@ -164,8 +166,30 @@ export default function OrdersClient() {
                     <td className="py-3.5 pr-4 font-medium text-forest-900 tabular-nums">
                       {formatPaise(order.totalPaise)}
                     </td>
-                    <td className="py-3.5">
+                    <td className="py-3.5 pr-4">
                       <OrderStatusBadge status={order.status} />
+                    </td>
+                    <td className="py-3.5">
+                      <div className="flex items-center justify-end gap-1">
+                        <a
+                          href={buildOrderWhatsAppUrl(order)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`Send WhatsApp update to ${order.customer.name}`}
+                          title="Send WhatsApp update"
+                          className="p-2 rounded-lg text-forest-900/40 hover:text-[#25D366] hover:bg-forest-50 transition-colors"
+                        >
+                          <MessageCircle size={16} strokeWidth={2} />
+                        </a>
+                        <Link
+                          href={`/admin/orders/${order.id}/invoice`}
+                          aria-label={`Invoice for ${order.id}`}
+                          title="View / download invoice"
+                          className="p-2 rounded-lg text-forest-900/40 hover:text-forest-900 hover:bg-forest-50 transition-colors"
+                        >
+                          <FileText size={16} strokeWidth={2} />
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}

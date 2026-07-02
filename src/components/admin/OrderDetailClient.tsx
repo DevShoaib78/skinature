@@ -2,14 +2,39 @@
 
 import { useMemo } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, MessageCircle, FileText, Mail, Phone, MapPin } from 'lucide-react'
+import {
+  ArrowLeft,
+  MessageCircle,
+  FileText,
+  Mail,
+  Phone,
+  MapPin,
+  Truck,
+  PackageCheck,
+  CheckCircle2,
+  Download,
+} from 'lucide-react'
 import { useAdmin } from '@/store/admin'
 import { getOrderById, type OrderStatus } from '@/lib/mock/orders'
 import { buildOrderWhatsAppUrl } from '@/lib/whatsapp'
 import { formatPaise, formatDate } from '@/lib/format'
-import { Card, OrderStatusBadge, AdminField, adminInputClass } from '@/components/admin/ui'
+import {
+  Card,
+  OrderStatusBadge,
+  AdminField,
+  AdminButton,
+  adminInputClass,
+} from '@/components/admin/ui'
 
 const STATUSES: OrderStatus[] = ['pending', 'paid', 'shipped', 'delivered', 'cancelled']
+
+/** The natural next step in fulfilment, for the one-click action. */
+const NEXT_STEP: Partial<
+  Record<OrderStatus, { to: OrderStatus; label: string; icon: typeof Truck }>
+> = {
+  paid: { to: 'shipped', label: 'Mark as Shipped', icon: Truck },
+  shipped: { to: 'delivered', label: 'Mark as Delivered', icon: PackageCheck },
+}
 
 export default function OrderDetailClient({ orderId }: { orderId: string }) {
   const orderStatus = useAdmin((s) => s.orderStatus)
@@ -75,6 +100,13 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
             >
               <FileText size={15} aria-hidden="true" />
               View Invoice
+            </Link>
+            <Link
+              href={`/admin/orders/${order.id}/invoice?print=1`}
+              className="inline-flex items-center gap-2 px-4 py-2.5 border border-forest-900/20 bg-white text-forest-900 rounded-xl text-xs font-semibold uppercase tracking-[0.1em] hover:border-forest-900 transition-colors"
+            >
+              <Download size={15} aria-hidden="true" />
+              Download PDF
             </Link>
           </div>
         </div>
@@ -156,8 +188,33 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
 
         {/* Customer + status */}
         <div className="space-y-6">
-          <Card title="Update Status">
-            <AdminField label="Order status">
+          <Card title="Fulfilment">
+            {(() => {
+              const next = NEXT_STEP[order.status]
+              if (next) {
+                const Icon = next.icon
+                return (
+                  <AdminButton
+                    onClick={() => setOrderStatus(order.id, next.to)}
+                    className="w-full mb-4 py-3.5"
+                  >
+                    <Icon size={16} aria-hidden="true" />
+                    {next.label}
+                  </AdminButton>
+                )
+              }
+              if (order.status === 'delivered') {
+                return (
+                  <p className="flex items-center justify-center gap-2 w-full mb-4 py-3 rounded-xl bg-forest-50 border border-forest-100 text-forest-800 text-xs font-semibold uppercase tracking-[0.1em]">
+                    <CheckCircle2 size={15} aria-hidden="true" />
+                    Delivered
+                  </p>
+                )
+              }
+              return null
+            })()}
+
+            <AdminField label="Or set status manually">
               <select
                 value={order.status}
                 onChange={(e) => setOrderStatus(order.id, e.target.value as OrderStatus)}
@@ -171,7 +228,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
               </select>
             </AdminField>
             <p className="text-forest-900/40 text-xs mt-3 leading-relaxed">
-              Status changes are saved instantly. At launch this also triggers
+              Changes save instantly. At launch, status updates also trigger
               customer notifications.
             </p>
           </Card>
