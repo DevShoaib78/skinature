@@ -124,6 +124,11 @@ price triggers the strikethrough treatment.
     **AEO shipped (2026-07-02):** `/llms.txt` (live catalog + brand facts for AI answer
     engines), `Organization`/`Brand` JSON-LD with full NAP + GSTIN + founders, plus the
     existing FAQPage/Product/Breadcrumb schema. Business constants in `src/lib/data.ts`.
+    **Mobile verified (2026-07-02):** audited at 390px (iPhone) with headless Chrome —
+    **zero horizontal overflow on any page** (`scrollWidth == innerWidth` across home,
+    shop, product, cart, FAQ, our-story, contact, admin login), screenshots reviewed.
+    The only wide elements are admin data tables (inside `overflow-x-auto` wrappers) and
+    the shop filter chips (a scroll strip) — both intentional.
     **AEO (Answer Engine Optimization) is in scope alongside SEO** (per Shoaib,
     2026-07-02): optimize for AI answer engines (Google AI Overviews, ChatGPT,
     Perplexity). Already in place: FAQPage/Product/Organization/Breadcrumb schema,
@@ -160,7 +165,18 @@ price triggers the strikethrough treatment.
    - Magic-link reviews live: `/review/[token]` → single-use `submit_review` RPC
      → pending review → admin approval. Verified by an end-to-end test.
 3. Razorpay (test mode) — create-order, verify signature, webhook; replace the
-   mock payment sheet. _(Waiting on account access from Adnan.)_
+   mock payment sheet. _(Waiting on **test** keys from Adnan.)_
+   **Account context (2026-07-02):** Adnan has two Razorpay accounts — his **personal**
+   one (currently powering the live WordPress site on skinature.org) and a **company**
+   one (switch to later). We use the personal account first. Notes:
+   - Switching personal → company later = swap Key ID/Secret + re-register webhook.
+     **No code change.**
+   - Test mode is isolated from the live WordPress payments; building/testing does NOT
+     affect the running WP store. **Do NOT regenerate the LIVE key** pre-launch — it would
+     break WordPress's live payments. Only the TEST key is needed now.
+   - **Launch is a domain cutover:** our deploy replaces WordPress at skinature.org (can't
+     run both). At cutover: point DNS to our host, verify a real ₹1 live payment, then
+     disable the old WooCommerce Razorpay webhook. Keep WP live until that moment.
 4. ✅ **Email + PDF invoice + review-invite scheduler — BUILT (2026-07-02), gated.**
    - PDF invoice via **react-pdf** (`src/lib/pdf/`), verified rendering the real GST
      invoice (Nurtured by Nature Products, GSTIN, Rs. amounts). Admin **Download PDF**

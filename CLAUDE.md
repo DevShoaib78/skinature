@@ -148,6 +148,13 @@ Single price shown by default; an optional **sale price** triggers the ~~striket
 - **All-in build** through to launch (not gated by milestones).
 - **Vibe coding** — the developer guides step-by-step; implement focused, minimal changes per instruction.
 - **Ask before assuming** business logic. Correctness and polish are the bar — this is an important client.
+- **Verify every change end-to-end** against the running app and show the evidence (real
+  request → DB row, real PDF, real 404) — not just `npm run build`/`lint`. The developer
+  values this highly.
+- **Mobile-first, verified.** Audited at 390px (2026-07-02): zero horizontal overflow on
+  any page. To re-check: `npm run start`, then drive the installed Chrome via
+  `puppeteer-core` (install `--no-save`) at a 390px viewport, measure
+  `scrollWidth == innerWidth`, and screenshot each route.
 - Indian market: prices in INR (₹), Razorpay for payments, WhatsApp as a key channel.
 
 ## Git & Commits — STRICT, NON-NEGOTIABLE
