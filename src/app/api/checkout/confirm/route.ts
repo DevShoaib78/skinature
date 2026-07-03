@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import { getSupabaseService } from "@/lib/supabase/server";
+import { emailEnabled, sendOrderEmails } from "@/lib/email/send";
+import { renderInvoiceBuffer } from "@/lib/pdf/render";
+import { rowToOrder, rowToSettings, ORDER_SELECT } from "@/lib/db/mappers";
+import type { OrderRow, SettingsRow } from "@/lib/db/mappers";
+
+export const runtime = "nodejs";
 
 /**
  * Confirms the mock payment for a pending order.
@@ -97,6 +103,25 @@ export async function POST(request: Request) {
         send_after: sendAfter.toISOString(),
       }))
     );
+  }
+
+  // ── confirmation email + PDF invoice (no-op until Resend is configured) ──
+  // Never let email/PDF failures fail a paid order.
+  if (emailEnabled()) {
+    try {
+      const [{ data: fullOrder }, { data: settingsRow }] = await Promise.all([
+        db.from("orders").select(ORDER_SELECT).eq("id", order.id).single(),
+        db.from("site_settings").select("*").single(),
+      ]);
+      if (fullOrder && settingsRow) {
+        const domainOrder = rowToOrder(fullOrder as unknown as OrderRow);
+        const settings = rowToSettings(settingsRow as SettingsRow);
+        const pdf = await renderInvoiceBuffer(domainOrder, settings);
+        await sendOrderEmails(domainOrder, settings, pdf);
+      }
+    } catch (err) {
+      console.error("[confirm] order email failed:", err);
+    }
   }
 
   type CustomerJoin = { email: string; full_name: string; phone: string } | null;

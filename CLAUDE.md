@@ -33,6 +33,14 @@ domain types `src/lib/domain.ts`. Admin demo login: admin@skinature.org (a real 
 user; rotate at launch). Static catalog in `data.ts` remains ONLY as build fallback +
 seed reference.
 
+Also built (all gated so they no-op until configured): **PDF invoices** (`src/lib/pdf/`,
+react-pdf; admin `GET /api/admin/invoice/[orderNo]`, cookie-authed); **email** pipeline
+(`src/lib/email/`, Resend; gated on `RESEND_API_KEY`+`EMAIL_FROM`; wired into
+`/api/checkout/confirm`); **review-invite cron** (`/api/cron/send-review-invites`, gated
+on `CRON_SECRET`); **AEO** (`/llms.txt` + `Organization` JSON-LD with NAP/GSTIN). PDFs use
+"Rs." not ₹ (the ₹ glyph is missing from standard PDF fonts). Verify PDF changes by
+running `npx tsx scripts/test-invoice-pdf.mts <out.pdf>` and opening the file.
+
 ## Tech Stack
 
 - **Framework:** Next.js 16 (App Router) + React 19 + TypeScript

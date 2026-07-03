@@ -221,3 +221,22 @@ export const SITE_DESCRIPTION =
   'Skinature is a premium natural skincare and haircare brand from India. 100% chemical-free, lab-tested, cruelty-free products, nurtured by nature and perfected for your skin.'
 export const INSTAGRAM_URL = 'https://www.instagram.com/official.skinature'
 export const YOUTUBE_URL = 'https://www.youtube.com/@Officialskinature/shorts'
+
+/** Registered legal entity + address (from Adnan). Used for invoices, NAP, and structured data. */
+export const BUSINESS_LEGAL_NAME = 'Nurtured by Nature Products'
+export const BUSINESS_GSTIN = '36AAZFN8373Q1ZU'
+export const BUSINESS_ADDRESS = {
+  street: 'Plot No. 509-J-III, Road No. 86, Near Lotus Pond, Jubilee Hills',
+  locality: 'Hyderabad',
+  region: 'Telangana',
+  postalCode: '500096',
+  country: 'IN',
+} as const
+export const BUSINESS_PILLARS = [
+  'Chemical-Free',
+  'Lab-Tested',
+  'Cruelty-Free',
+  'Safe for Kids',
+  'Gender-Neutral',
+  'Result-Oriented',
+] as const

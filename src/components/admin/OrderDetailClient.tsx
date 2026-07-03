@@ -165,13 +165,13 @@ export default function OrderDetailClient({ orderId: orderNo }: { orderId: strin
               <FileText size={15} aria-hidden="true" />
               View Invoice
             </Link>
-            <Link
-              href={`/admin/orders/${order.orderNo}/invoice?print=1`}
+            <a
+              href={`/api/admin/invoice/${order.orderNo}`}
               className="inline-flex items-center gap-2 px-4 py-2.5 border border-forest-900/20 bg-white text-forest-900 rounded-xl text-xs font-semibold uppercase tracking-[0.1em] hover:border-forest-900 transition-colors"
             >
               <Download size={15} aria-hidden="true" />
               Download PDF
-            </Link>
+            </a>
           </div>
         </div>
         <p className="text-forest-900/45 text-sm mt-2">

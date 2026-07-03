@@ -121,6 +121,9 @@ price triggers the strikethrough treatment.
    (Adnan to define).
 10. **SEO & AEO & responsiveness** — strong on-page + technical SEO; excellent
     responsiveness on mobile / tablet / desktop. ₹-vs-USD structured-data bug fixed.
+    **AEO shipped (2026-07-02):** `/llms.txt` (live catalog + brand facts for AI answer
+    engines), `Organization`/`Brand` JSON-LD with full NAP + GSTIN + founders, plus the
+    existing FAQPage/Product/Breadcrumb schema. Business constants in `src/lib/data.ts`.
     **AEO (Answer Engine Optimization) is in scope alongside SEO** (per Shoaib,
     2026-07-02): optimize for AI answer engines (Google AI Overviews, ChatGPT,
     Perplexity). Already in place: FAQPage/Product/Organization/Breadcrumb schema,
@@ -158,22 +161,33 @@ price triggers the strikethrough treatment.
      → pending review → admin approval. Verified by an end-to-end test.
 3. Razorpay (test mode) — create-order, verify signature, webhook; replace the
    mock payment sheet. _(Waiting on account access from Adnan.)_
-4. Email + PDF invoice (Resend + react-pdf), stored to Supabase Storage; wire the
-   21-day review-invite auto-send (pg_cron or Vercel Cron reading `send_after`).
+4. ✅ **Email + PDF invoice + review-invite scheduler — BUILT (2026-07-02), gated.**
+   - PDF invoice via **react-pdf** (`src/lib/pdf/`), verified rendering the real GST
+     invoice (Nurtured by Nature Products, GSTIN, Rs. amounts). Admin **Download PDF**
+     hits `GET /api/admin/invoice/[orderNo]` (cookie-authed, admin-only).
+   - **Resend** email pipeline (`src/lib/email/`): customer confirmation + PDF attachment,
+     admin notification, and review-invite templates. Gated behind `RESEND_API_KEY` +
+     `EMAIL_FROM` — a graceful no-op until set, wired into `/api/checkout/confirm` so an
+     unpaid/unsent email never breaks a paid order.
+   - **Review-invite auto-send** cron at `GET/POST /api/cron/send-review-invites`
+     (protected by `CRON_SECRET`): finds invites past their 21-day `send_after`, emails
+     the magic link, marks `sent_at`. Schedule it daily (Vercel Cron) at deploy.
+   - Remaining before launch: set the Resend keys + verify the sending domain (SPF/DKIM),
+     set `CRON_SECRET`, and register the Vercel Cron schedule. (Supabase Storage backup of
+     PDFs is optional — invoices regenerate on demand from order data.)
 5. Deploy to Vercel; switch Razorpay to live; DNS; live webhooks.
 
 ## 8. Open Items / To Brainstorm
 
-- **Regional pricing (UAE / USA / international).** Adnan wants localized pricing for
-  overseas orders. Razorpay settles in INR and needs its **International Payments** feature
-  enabled; genuine multi-currency presentment is a further Razorpay capability. Decisions
-  needed: which regions/currencies; localized prices vs. pure FX conversion; international
-  shipping per region; Razorpay International eligibility; whether a secondary gateway
-  (Stripe/PayPal) is acceptable for overseas. **Recommendation:** architect the schema for
-  per-region/currency pricing now, launch India/INR first, and enable Razorpay
-  International + multi-currency as a fast-follow. _(Questions sent to Adnan 2026-07-02 —
-  awaiting his answers on regions/currencies, localized vs. FX, intl shipping, Razorpay
-  International eligibility, and duties.)_
+- **Regional pricing (UAE / USA / international) — DEFERRED to the final phase.**
+  Decision (Shoaib, 2026-07-02): **launch India/INR first**, tackle regional pricing
+  last, after the India store is live. More inputs from Adnan have arrived and are
+  parked for that phase. Razorpay settles in INR and needs its **International Payments**
+  feature enabled; genuine multi-currency presentment is a further Razorpay capability.
+  Open decisions for that phase: which regions/currencies; localized prices vs. pure FX;
+  international shipping per region; Razorpay International eligibility; whether a
+  secondary gateway (Stripe/PayPal) is acceptable overseas. The schema already leaves
+  room for per-region price rows so this stays a fast-follow, not a rebuild.
 - **New product images incoming** — the client has redesigned product packaging and
   will send new photography; swap `public/new mockups/` assets + product galleries
   when received.
@@ -218,8 +232,9 @@ price triggers the strikethrough treatment.
 | Need | From | Status |
 |------|------|--------|
 | Supabase project + keys | Shoaib (client creds) | ✅ done — `bvkzurzutwuxebrnrjqz`, ap-south-1 |
-| Razorpay access | Adnan | ask for a team-member invite (Developer role) OR test-mode Key ID + Secret; NEVER his dashboard password |
-| Razorpay International enabled | Adnan / Razorpay | questions sent to Adnan |
+| Razorpay **Test-mode** Key ID (`rzp_test_…`) + Key Secret | Adnan | requested — Dashboard → Settings → API Keys (Test Mode) → Generate Test Key. Live keys + webhook created at deploy, not now. |
+| Razorpay account activated (KYC) + business name = "Nurtured by Nature Products" | Adnan | confirm (needed for LIVE, not for test build) |
+| Razorpay International enabled | Adnan / Razorpay | deferred with regional pricing (final phase) |
 | Business legal details (invoice) | Adnan | open |
 | Resend account + skinature.com DNS | Shoaib + domain owner | later |
 | Razorpay live keys | Adnan | before launch |
@@ -236,7 +251,10 @@ price triggers the strikethrough treatment.
 - [ ] Switch **Razorpay from test → live keys**.
 - [ ] Move all env vars into the **production host (Vercel)** — never rely on `.env.local` in prod.
 - [ ] Final **RLS audit** on every table (nothing sensitive readable/writable by `anon`).
-- [ ] Verify production **webhooks** (Razorpay) and **email domain** (Resend SPF/DKIM).
+- [ ] Verify production **webhooks** (Razorpay) and **email domain** (Resend SPF/DKIM);
+      set `RESEND_API_KEY` / `EMAIL_FROM` / `EMAIL_ADMIN`.
+- [ ] Set `CRON_SECRET` and register the **Vercel Cron** for
+      `/api/cron/send-review-invites` (daily) so 21-day review invites auto-send.
 - [ ] Replace the **mock payment sheet** with real Razorpay checkout.
 - [ ] Swap **admin demo auth** (`src/store/admin.ts`) for Supabase Auth and remove the
       demo credentials.

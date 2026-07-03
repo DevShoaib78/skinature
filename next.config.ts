@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
+  // react-pdf ships its own binaries/fonts; keep it out of the bundler.
+  serverExternalPackages: ['@react-pdf/renderer'],
   images: {
     remotePatterns: [
       {
