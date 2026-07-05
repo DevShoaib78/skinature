@@ -198,23 +198,32 @@ const REVIEWS = [
   [2, 'Vandana P.', 5, '2026-06-30', 'pending', 'Ordered after seeing a reel. This oil has replaced three products on my shelf. My scalp has never felt healthier.'],
 ]
 
+// Synthetic demo customers ONLY. Emails use example.com (RFC 2606 reserved — can
+// never be a real deliverable address). Phones alternate between two TEST numbers
+// the developer (Shoaib) owns, so the WhatsApp send flow can be exercised safely.
+// ALL of this demo data (orders, customers, reviews, these numbers) is wiped
+// before launch — see docs/DECISIONS.md §11. Never seed realistic-looking Indian
+// mobile numbers: the numbering space is dense enough that plausible numbers hit
+// real subscribers.
+const TEST_PHONE_A = '9885421522'
+const TEST_PHONE_B = '9989298408'
 const CUSTOMER_POOL = [
-  { name: 'Ayesha Tabassum', email: 'ayesha.tabassum@gmail.com', phone: '9848012345', city: 'Hyderabad', state: 'Telangana' },
-  { name: 'Priya Kondapalli', email: 'priya.kondapalli@gmail.com', phone: '9866123456', city: 'Warangal', state: 'Telangana' },
-  { name: 'Mehnaz Anjum', email: 'mehnaz.anjum@outlook.com', phone: '9885234567', city: 'Hyderabad', state: 'Telangana' },
-  { name: 'Farhan Mirza', email: 'farhan.mirza@gmail.com', phone: '9700345678', city: 'Nizamabad', state: 'Telangana' },
-  { name: 'Keerthana Reddy', email: 'keerthana.reddy@gmail.com', phone: '9490456789', city: 'Karimnagar', state: 'Telangana' },
-  { name: 'Zoya Fatima', email: 'zoya.fatima@gmail.com', phone: '9959567890', city: 'Hyderabad', state: 'Telangana' },
-  { name: 'Shruti Venkatesan', email: 'shruti.venkatesan@gmail.com', phone: '9445678901', city: 'Chennai', state: 'Tamil Nadu' },
-  { name: 'Divya Nair', email: 'divya.nair@gmail.com', phone: '9895789012', city: 'Kochi', state: 'Kerala' },
-  { name: 'Sameer Hussain', email: 'sameer.hussain@gmail.com', phone: '9820890123', city: 'Mumbai', state: 'Maharashtra' },
-  { name: 'Ankita Jain', email: 'ankita.jain@gmail.com', phone: '9928901234', city: 'Jaipur', state: 'Rajasthan' },
-  { name: 'Mohammed Irfan', email: 'mohammed.irfan@gmail.com', phone: '9986012345', city: 'Bengaluru', state: 'Karnataka' },
-  { name: 'Sana Begum', email: 'sana.begum@gmail.com', phone: '9701123456', city: 'Hyderabad', state: 'Telangana' },
-  { name: 'Ritika Sharma', email: 'ritika.sharma@gmail.com', phone: '9810234567', city: 'Delhi', state: 'Delhi' },
-  { name: 'Nikitha Muppala', email: 'nikitha.muppala@gmail.com', phone: '9490345678', city: 'Vijayawada', state: 'Andhra Pradesh' },
-  { name: 'Lubna Shaikh', email: 'lubna.shaikh@gmail.com', phone: '9822456789', city: 'Pune', state: 'Maharashtra' },
-  { name: 'Naaz Osama', email: 'naaz.osama@gmail.com', phone: '9866567890', city: 'Hyderabad', state: 'Telangana' },
+  { name: 'Ayesha Tabassum', email: 'ayesha.tabassum@example.com', phone: TEST_PHONE_A, city: 'Hyderabad', state: 'Telangana' },
+  { name: 'Priya Kondapalli', email: 'priya.kondapalli@example.com', phone: TEST_PHONE_B, city: 'Warangal', state: 'Telangana' },
+  { name: 'Mehnaz Anjum', email: 'mehnaz.anjum@example.com', phone: TEST_PHONE_A, city: 'Hyderabad', state: 'Telangana' },
+  { name: 'Farhan Mirza', email: 'farhan.mirza@example.com', phone: TEST_PHONE_B, city: 'Nizamabad', state: 'Telangana' },
+  { name: 'Keerthana Reddy', email: 'keerthana.reddy@example.com', phone: TEST_PHONE_A, city: 'Karimnagar', state: 'Telangana' },
+  { name: 'Zoya Fatima', email: 'zoya.fatima@example.com', phone: TEST_PHONE_B, city: 'Hyderabad', state: 'Telangana' },
+  { name: 'Shruti Venkatesan', email: 'shruti.venkatesan@example.com', phone: TEST_PHONE_A, city: 'Chennai', state: 'Tamil Nadu' },
+  { name: 'Divya Nair', email: 'divya.nair@example.com', phone: TEST_PHONE_B, city: 'Kochi', state: 'Kerala' },
+  { name: 'Sameer Hussain', email: 'sameer.hussain@example.com', phone: TEST_PHONE_A, city: 'Mumbai', state: 'Maharashtra' },
+  { name: 'Ankita Jain', email: 'ankita.jain@example.com', phone: TEST_PHONE_B, city: 'Jaipur', state: 'Rajasthan' },
+  { name: 'Mohammed Irfan', email: 'mohammed.irfan@example.com', phone: TEST_PHONE_A, city: 'Bengaluru', state: 'Karnataka' },
+  { name: 'Sana Begum', email: 'sana.begum@example.com', phone: TEST_PHONE_B, city: 'Hyderabad', state: 'Telangana' },
+  { name: 'Ritika Sharma', email: 'ritika.sharma@example.com', phone: TEST_PHONE_A, city: 'Delhi', state: 'Delhi' },
+  { name: 'Nikitha Muppala', email: 'nikitha.muppala@example.com', phone: TEST_PHONE_B, city: 'Vijayawada', state: 'Andhra Pradesh' },
+  { name: 'Lubna Shaikh', email: 'lubna.shaikh@example.com', phone: TEST_PHONE_A, city: 'Pune', state: 'Maharashtra' },
+  { name: 'Naaz Osama', email: 'naaz.osama@example.com', phone: TEST_PHONE_B, city: 'Hyderabad', state: 'Telangana' },
 ]
 
 const ADDRESS_LINES = [

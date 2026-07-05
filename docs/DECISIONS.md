@@ -271,6 +271,11 @@ price triggers the strikethrough treatment.
       set `RESEND_API_KEY` / `EMAIL_FROM` / `EMAIL_ADMIN`.
 - [ ] Set `CRON_SECRET` and register the **Vercel Cron** for
       `/api/cron/send-review-invites` (daily) so 21-day review invites auto-send.
+- [ ] **Wipe ALL demo/seed data before real customers arrive** — the seeded orders,
+      customers, reviews, and review-invites are synthetic (emails `@example.com`, phones
+      are Shoaib's two test numbers `9885421522` / `9989298408`). Delete them so the store
+      launches empty. NEVER seed realistic-looking Indian mobile numbers (they collide with
+      real subscribers).
 - [ ] Replace the **mock payment sheet** with real Razorpay checkout.
 - [ ] Swap **admin demo auth** (`src/store/admin.ts`) for Supabase Auth and remove the
       demo credentials.
