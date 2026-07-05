@@ -62,7 +62,12 @@ after this capture — the terms below are the record.)_
 - **Payments:** **Razorpay** — prepaid only.
 - **Email + Invoice:** **Resend** + **@react-pdf/renderer** (PDF invoices).
 - **Cart state:** **zustand** (persistent via localStorage).
-- **Hosting:** **Vercel** (final call at deploy). **Domain:** skinature.org.
+- **Hosting:** **Vercel**. A password-gated **preview is LIVE** for the client at
+  **https://skinaturesite.vercel.app** (2026-07-06), deployed from the **Skinature**
+  account/repo (Vercel Hobby can't deploy the org repo from a collaborator, so the
+  Skinature account owns the Vercel project). Locked via `PREVIEW_BASIC_AUTH`
+  (`src/middleware.ts`) — creds `skinature` / `Skinature@2026`. **Domain:** skinature.org
+  (production, later — remove the gate then).
 
 ## 5. Products (current catalog — 5)
 
@@ -165,7 +170,10 @@ price triggers the strikethrough treatment.
    - Magic-link reviews live: `/review/[token]` → single-use `submit_review` RPC
      → pending review → admin approval. Verified by an end-to-end test.
 3. Razorpay (test mode) — create-order, verify signature, webhook; replace the
-   mock payment sheet. _(Waiting on **test** keys from Adnan.)_
+   mock payment sheet. _(Waiting on **test** keys from Adnan.)_ **Note (2026-07-06):**
+   Adnan was hunting for Test Mode on the Razorpay **mobile app** — it's not exposed there
+   the same way. Test keys are generated on the **desktop dashboard**: dashboard.razorpay.com
+   → toggle to **Test Mode** → **Settings/Account & Settings → API Keys → Generate Key**.
    **Account context (2026-07-02):** Adnan has two Razorpay accounts — his **personal**
    one (currently powering the live WordPress site on skinature.org) and a **company**
    one (switch to later). We use the personal account first. Notes:
@@ -276,6 +284,8 @@ price triggers the strikethrough treatment.
       are Shoaib's two test numbers `9885421522` / `9989298408`). Delete them so the store
       launches empty. NEVER seed realistic-looking Indian mobile numbers (they collide with
       real subscribers).
+- [ ] **Remove `PREVIEW_BASIC_AUTH`** from the Vercel project so the production site is
+      public (the middleware is a no-op without it).
 - [ ] Replace the **mock payment sheet** with real Razorpay checkout.
 - [ ] Swap **admin demo auth** (`src/store/admin.ts`) for Supabase Auth and remove the
       demo credentials.

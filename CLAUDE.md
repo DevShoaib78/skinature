@@ -33,6 +33,10 @@ domain types `src/lib/domain.ts`. Admin demo login: admin@skinature.org (a real 
 user; rotate at launch). Static catalog in `data.ts` remains ONLY as build fallback +
 seed reference.
 
+A password-gated **preview is live** at **skinaturesite.vercel.app** (deployed from the
+Skinature account/repo; unlock `skinature`/`Skinature@2026`). The gate is `src/middleware.ts`,
+active only when `PREVIEW_BASIC_AUTH` is set — a no-op in production (remove it at launch).
+
 Also built (all gated so they no-op until configured): **PDF invoices** (`src/lib/pdf/`,
 react-pdf; admin `GET /api/admin/invoice/[orderNo]`, cookie-authed); **email** pipeline
 (`src/lib/email/`, Resend; gated on `RESEND_API_KEY`+`EMAIL_FROM`; wired into
