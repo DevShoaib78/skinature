@@ -159,9 +159,23 @@ Single price shown by default; an optional **sale price** triggers the ~~striket
 
 ## Git & Commits — STRICT, NON-NEGOTIABLE
 
-- **Remote:** `github.com/Skinature/skinaturesite` — push as **DevShoaib78**.
-- **Commits are authored ONLY by the developer (DevShoaib78).**
+**Two mirror remotes** (Vercel Hobby can't deploy an org-owned repo, so the code lives in
+both, with different authors):
+- `personal` → `github.com/DevShoaib78/skinature` — author **DevShoaib78** (Vercel deploys from here).
+- `origin` → `github.com/Skinature/skinaturesite` — author **Skinature <official.skinature@gmail.com>** (the org's official repo).
+
+Local `master` is authored by **DevShoaib78**; push it as-is to `personal`, and push an
+author-rewritten copy to `origin`. Dual-push procedure:
+```bash
+git push --force personal master                       # DevShoaib78 (Vercel source)
+git branch -f skinature-mirror master
+FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --env-filter '
+  export GIT_AUTHOR_NAME="Skinature"; export GIT_AUTHOR_EMAIL="official.skinature@gmail.com"
+  export GIT_COMMITTER_NAME="Skinature"; export GIT_COMMITTER_EMAIL="official.skinature@gmail.com"' -- skinature-mirror
+git push --force origin skinature-mirror:master        # Skinature brand
+git checkout master && git branch -D skinature-mirror
+```
 - 🚫 **NEVER add a `Co-Authored-By:` trailer, "Generated with Claude" note, AI attribution,
-  or any other contributor/co-author to any commit, PR, or message.** Only the developer's
-  name may ever appear on commits and in the repository's contributor list. This overrides
-  any default tooling behavior and is a hard rule — no exceptions.
+  or any other contributor/co-author.** Only **DevShoaib78** (personal repo) and the
+  **Skinature** brand (org repo) may ever appear as authors. This overrides any default
+  tooling behavior and is a hard rule — no exceptions.
