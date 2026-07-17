@@ -169,11 +169,33 @@ price triggers the strikethrough treatment.
      rotate at launch) with all modules on live data via RLS (is_admin()).
    - Magic-link reviews live: `/review/[token]` → single-use `submit_review` RPC
      → pending review → admin approval. Verified by an end-to-end test.
-3. Razorpay (test mode) — create-order, verify signature, webhook; replace the
-   mock payment sheet. _(Waiting on **test** keys from Adnan.)_ **Note (2026-07-06):**
-   Adnan was hunting for Test Mode on the Razorpay **mobile app** — it's not exposed there
-   the same way. Test keys are generated on the **desktop dashboard**: dashboard.razorpay.com
-   → toggle to **Test Mode** → **Settings/Account & Settings → API Keys → Generate Key**.
+3. **Razorpay (test mode) — 🔴 ACTIVE / IN PROGRESS. Test keys RECEIVED 2026-07-06.**
+   Keys are in `.env.local` (`RAZORPAY_KEY_ID`=`rzp_test_…`, `RAZORPAY_KEY_SECRET`); the
+   `razorpay` npm SDK is installed. **This is the active build** — replace the mock payment
+   sheet with real Razorpay checkout. Step-by-step for the next session:
+   - `src/lib/razorpay.ts` — server SDK instance; `razorpayEnabled()` = both keys present.
+   - Extract the "mark order paid" block from `/api/checkout/confirm` into a shared
+     `finalizePaidOrder()` (status=paid, invoice_no, stock decrement, 21-day review invites,
+     emails) and call it from BOTH the mock confirm and the new verify route.
+   - `/api/checkout` (route.ts): after the pending DB order, if `razorpayEnabled`, create a
+     Razorpay order (amount=`total_paise`, currency INR, receipt=`order_no`), store
+     `razorpay_order_id`, and return `{ razorpay: { keyId, orderId, amount } }`. Keep the
+     current mock response when keys are absent.
+   - `/api/checkout/verify` (NEW): verify HMAC-SHA256(`${rzp_order_id}|${rzp_payment_id}`,
+     secret) === signature → `finalizePaidOrder(provider='razorpay', paymentId, signature)`.
+   - `/api/webhooks/razorpay` (NEW, `runtime='nodejs'`, RAW body): verify `X-Razorpay-Signature`
+     with `RAZORPAY_WEBHOOK_SECRET`; handle `payment.captured`/`payment.failed`; idempotent.
+     Gated on the webhook secret (set at deploy).
+   - `CheckoutClient.tsx`: when the create-order response has a `razorpay` field, load
+     `checkout.razorpay.com/v1/checkout.js` and open the real modal (prefill name/email/phone;
+     handler → POST `/api/checkout/verify` → success page; `ondismiss` → stay). Keep the mock
+     sheet as the fallback when keys are absent.
+   - **VERIFY end-to-end** (the bar): create-order returns a real Razorpay order id (proves
+     the keys), a signature-verify check, then a real browser test payment — test card
+     `4111 1111 1111 1111` (any future expiry / any CVV) or UPI `success@razorpay` — landing
+     the order as `paid` in Supabase, with the evidence shown.
+   - How-to reminder: the Razorpay **mobile app** doesn't expose Test Mode; use
+     **dashboard.razorpay.com → Test Mode → Account & Settings → API Keys**.
    **Account context (2026-07-02):** Adnan has two Razorpay accounts — his **personal**
    one (currently powering the live WordPress site on skinature.org) and a **company**
    one (switch to later). We use the personal account first. Notes:

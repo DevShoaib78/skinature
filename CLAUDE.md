@@ -22,9 +22,16 @@ Current state: **frontend complete AND the Supabase backend is live.** The store
 reads products/reviews from Postgres (ISR 5 min), checkout writes real orders via
 `/api/checkout` (+ `/confirm`), the admin panel runs on **real Supabase Auth** with all
 modules on live data (RLS-gated), and magic-link reviews work end to end
-(`/review/[token]`). The **only remaining stand-in is the mock payment sheet**, which
-swaps to Razorpay checkout when keys arrive; after that: Resend emails + PDF invoices +
-the 21-day review-invite scheduler, then deploy. See `docs/DECISIONS.md` §7.
+(`/review/[token]`). A password-gated preview is live for the client at
+**skinaturesite.vercel.app**.
+
+🔴 **ACTIVE TASK (resume here): the Razorpay integration.** Test keys arrived 2026-07-06
+and are in `.env.local` (`RAZORPAY_KEY_ID`/`RAZORPAY_KEY_SECRET`); the `razorpay` SDK is
+installed. The build (create-order → real checkout modal → verify signature → webhook,
+replacing the mock payment sheet, with a real test-payment verification) is **the next
+step and not yet started** — the full step-by-step plan is in **`docs/DECISIONS.md` §7,
+item 3**. After Razorpay: Resend emails + verify domain, schedule the review-invite cron,
+then deploy + DNS cutover.
 
 Backend specifics: schema/RLS/seed in `supabase/migrations/` applied via
 `node scripts/db-setup.mjs`; server data access `src/lib/db/store.ts` (service key,
