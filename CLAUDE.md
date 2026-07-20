@@ -25,13 +25,36 @@ modules on live data (RLS-gated), and magic-link reviews work end to end
 (`/review/[token]`). A password-gated preview is live for the client at
 **skinaturesite.vercel.app**.
 
-🔴 **ACTIVE TASK (resume here): the Razorpay integration.** Test keys arrived 2026-07-06
-and are in `.env.local` (`RAZORPAY_KEY_ID`/`RAZORPAY_KEY_SECRET`); the `razorpay` SDK is
-installed. The build (create-order → real checkout modal → verify signature → webhook,
-replacing the mock payment sheet, with a real test-payment verification) is **the next
-step and not yet started** — the full step-by-step plan is in **`docs/DECISIONS.md` §7,
-item 3**. After Razorpay: Resend emails + verify domain, schedule the review-invite cron,
-then deploy + DNS cutover.
+✅ **Razorpay is DONE and verified (2026-07-17/18, test mode).** Real checkout modal →
+create-order → HMAC signature verify (`/api/checkout/verify`) → webhook
+(`/api/webhooks/razorpay`, gated on `RAZORPAY_WEBHOOK_SECRET`), shared idempotent
+`finalizePaidOrder()` (`src/lib/checkout/finalize.ts`), mock sheet kept as fallback when
+keys are absent. A genuine test payment (Netbanking → Razorpay test simulator → Success)
+landed a real Razorpay-issued signature and a `paid` order in Supabase. EMI + Pay Later
+are hidden via `config.display.hide` (kept: UPI, Cards, Netbanking, Wallet). **Test keys
+stay until real launch** — founders test with no real money.
+
+🔴 **ACTIVE STATE (resume here) — see `docs/DECISIONS.md` §7 for full detail:**
+1. **This session's work is UNCOMMITTED** in the working tree (Razorpay, payment-method
+   trim, the home-page cart-drawer fix, review-invite admin controls). Commit + dual-push
+   only when the developer says so.
+2. **Email plan CHANGED: Gmail SMTP, not Resend.** Order/invoice/review emails must send
+   from **official.skinature@gmail.com** via a Gmail App Password (2FA → App Passwords;
+   ~500/day cap accepted). The Resend pipeline in `src/lib/email/` stays until swapped.
+   Waiting on the app password from the client.
+3. **Domain/DNS reality (investigated 2026-07-20):** GoDaddy = registrar ONLY (access ✅).
+   DNS is served by **webhostbox nameservers** (`ns1/ns2.bh-ht-11.webhostbox.net`);
+   WordPress + `@skinature.org` mail both live on `192.185.129.80` (HostGator reseller).
+   **No cPanel/WordPress/webmail admin access exists** (previous developer unreachable), so
+   the old site cannot be backed up. **Decision: point skinature.org at Vercel EARLY** (no
+   marketing yet; founders test by typing the domain) — approved by Adnan & Hina including
+   WordPress no longer being served. Do it by changing **nameservers at GoDaddy** per
+   Vercel's instructions after adding the domain to the Vercel project; remove
+   `PREVIEW_BASIC_AUTH`, add a temporary noindex until real launch. **Open question
+   (asked, awaiting client): keep `@skinature.org` MX receiving on the old server, or
+   gmail-only?** — that decides whether to replicate the MX records.
+4. Then: schedule the review-invite cron (`CRON_SECRET` + Vercel Cron), and at real launch
+   swap Razorpay test → live keys + register the live webhook (see §11 checklist).
 
 Backend specifics: schema/RLS/seed in `supabase/migrations/` applied via
 `node scripts/db-setup.mjs`; server data access `src/lib/db/store.ts` (service key,
@@ -46,11 +69,21 @@ active only when `PREVIEW_BASIC_AUTH` is set — a no-op in production (remove i
 
 Also built (all gated so they no-op until configured): **PDF invoices** (`src/lib/pdf/`,
 react-pdf; admin `GET /api/admin/invoice/[orderNo]`, cookie-authed); **email** pipeline
-(`src/lib/email/`, Resend; gated on `RESEND_API_KEY`+`EMAIL_FROM`; wired into
-`/api/checkout/confirm`); **review-invite cron** (`/api/cron/send-review-invites`, gated
-on `CRON_SECRET`); **AEO** (`/llms.txt` + `Organization` JSON-LD with NAP/GSTIN). PDFs use
+(`src/lib/email/`, currently Resend-based and gated on `RESEND_API_KEY`+`EMAIL_FROM`;
+**to be swapped to Gmail SMTP** per the active plan above; wired into `finalizePaidOrder`);
+**review-invite cron** (`/api/cron/send-review-invites`, gated on `CRON_SECRET`);
+**review-invite admin controls** on `/admin/orders/<no>` ("Send email now" via
+`POST /api/admin/review-invites/[id]/send` stops the 21-day auto-send; "Copy link" never
+touches the timer; "Restart timer" re-arms it +21 days — semantics locked by the client);
+**AEO** (`/llms.txt` + `Organization` JSON-LD with NAP/GSTIN). PDFs use
 "Rs." not ₹ (the ₹ glyph is missing from standard PDF fonts). Verify PDF changes by
 running `npx tsx scripts/test-invoice-pdf.mts <out.pdf>` and opening the file.
+
+⚠️ **CSS gotcha (learned 2026-07-18):** never leave a retained `transform` on a wrapper
+around fixed-position UI. `@keyframes fade-in` is opacity-only ON PURPOSE — with
+`animation-fill-mode: forwards`, an animated transform is retained as a matrix and makes
+the wrapper a containing block for `position: fixed`, which trapped the Navbar + CartDrawer
+on the home page (`.animate-fade-in-slow` in `HomeClient`). Don't re-add a transform there.
 
 ## Tech Stack
 
@@ -58,8 +91,9 @@ running `npx tsx scripts/test-invoice-pdf.mts <out.pdf>` and opening the file.
 - **Styling:** Tailwind CSS v4 + Framer Motion + Lenis (smooth scroll)
 - **Icons:** Lucide React
 - **Fonts:** Cormorant Garamond (serif), Lato (sans), Pinyon Script (cursive)
-- **Backend (incoming):** Supabase (Postgres + Auth + Storage), Razorpay (prepaid),
-  Resend + @react-pdf/renderer (email + PDF invoice), zustand (cart)
+- **Backend (live):** Supabase (Postgres + Auth + Storage), Razorpay (prepaid; test keys
+  until launch), @react-pdf/renderer (PDF invoice), zustand (cart). **Email: Gmail SMTP
+  from official.skinature@gmail.com (planned swap; `src/lib/email/` is Resend-based today).**
 - **Package Manager:** npm
 
 ## Commands
@@ -87,7 +121,7 @@ src/
 ├── components/
 │   ├── layout/                 # Navbar, Footer, SmoothScroll (window.__lenis), PolicyLayout
 │   ├── home/ shop/ ui/         # Storefront sections + ProductCard
-│   ├── cart/ checkout/ search/ # CartDrawer, CartHydration, mock payment sheet, overlay
+│   ├── cart/ checkout/ search/ # CartDrawer, CartHydration, Razorpay checkout (+mock fallback), overlay
 │   ├── admin/                  # AdminShell (guard), module clients, charts.tsx (validated palette)
 │   └── faq/ contact/ animations/
 ├── lib/
@@ -100,11 +134,14 @@ src/
 ```
 
 **Key facts:**
-- **Mock backend:** everything behaves real (cart, checkout, admin edits persist via
-  localStorage). The mock payment sheet stands in for Razorpay and says so on-screen.
-- **Admin demo login:** credentials exported from `src/store/admin.ts`
-  (`DEMO_ADMIN_EMAIL` / `DEMO_ADMIN_PASSWORD`); shown on the login screen. Replace with
-  Supabase Auth at launch.
+- **Payments are REAL (test mode):** checkout opens the actual Razorpay modal when
+  `RAZORPAY_KEY_ID`/`RAZORPAY_KEY_SECRET` are set; the mock payment sheet only appears
+  when keys are absent. To complete a test payment: **Netbanking → any bank → Success**
+  on Razorpay's simulator (the generic intl test card is rejected — account is
+  domestic-only; UPI shows QR-only in the modal).
+- **Admin login is real Supabase Auth:** demo creds `admin@skinature.org` /
+  `skinature@2026`, defined in `src/components/admin/LoginClient.tsx` (rotate/remove at
+  launch). `src/store/admin.ts` is legacy mock state.
 - **Product URLs are slugs** (`/product/bridal-kit`); legacy `/product/1..5` redirect
   permanently (next.config.ts).
 - **Active logo asset:** `public/logo-nobg.webp` (transparent; inverted white on dark
@@ -170,20 +207,28 @@ Single price shown by default; an optional **sale price** triggers the ~~striket
 
 ## Git & Commits — STRICT, NON-NEGOTIABLE
 
-**Two mirror remotes** (Vercel Hobby can't deploy an org-owned repo, so the code lives in
-both, with different authors):
-- `personal` → `github.com/DevShoaib78/skinature` — author **DevShoaib78** (Vercel deploys from here).
-- `origin` → `github.com/Skinature/skinaturesite` — author **Skinature <official.skinature@gmail.com>** (the org's official repo).
+**One canonical repo + one personal mirror.** The repo that matters is
+`origin` → **`github.com/Skinature/skinaturesite`** — it is the repo **connected to
+Vercel** (the Vercel project is owned by the Skinature account, and skinature.org will
+point at it). Vercel only auto-deploys commits **authored by the repo/Vercel account
+owner** — a collaborator's commits would NOT deploy once the site is live on the domain.
+That is WHY every commit reaching the org repo must be author-rewritten to Skinature:
+the "tip of the iceberg" that Vercel and the domain see must always be the Skinature
+account.
+- `personal` → `github.com/DevShoaib78/skinature` — author **DevShoaib78** (the
+  developer's own mirror/backup; NOT the deploy source).
+- `origin` → `github.com/Skinature/skinaturesite` — author **Skinature
+  <official.skinature@gmail.com>** (canonical; **Vercel deploys from here**).
 
-Local `master` is authored by **DevShoaib78**; push it as-is to `personal`, and push an
-author-rewritten copy to `origin`. Dual-push procedure:
+Local `master` is authored by **DevShoaib78**. Push order is ALWAYS: personal first
+(as-is), then the author-rewritten copy to `origin`. Dual-push procedure:
 ```bash
-git push --force personal master                       # DevShoaib78 (Vercel source)
+git push --force personal master                       # 1) DevShoaib78's mirror
 git branch -f skinature-mirror master
 FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --env-filter '
   export GIT_AUTHOR_NAME="Skinature"; export GIT_AUTHOR_EMAIL="official.skinature@gmail.com"
   export GIT_COMMITTER_NAME="Skinature"; export GIT_COMMITTER_EMAIL="official.skinature@gmail.com"' -- skinature-mirror
-git push --force origin skinature-mirror:master        # Skinature brand
+git push --force origin skinature-mirror:master        # 2) canonical — triggers the Vercel deploy
 git checkout master && git branch -D skinature-mirror
 ```
 - 🚫 **NEVER add a `Co-Authored-By:` trailer, "Generated with Claude" note, AI attribution,

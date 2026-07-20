@@ -5,7 +5,8 @@
 > If anything here conflicts with `CLAUDE.md`, older notes, or memory, **this file wins.**
 > Keep it updated whenever a decision changes.
 >
-> _Last updated: 2026-07-02 (frontend milestone complete)._
+> _Last updated: 2026-07-20 (Razorpay complete + verified; email plan switched to Gmail
+> SMTP; domain/DNS investigated, early Vercel cutover approved; work UNCOMMITTED)._
 
 ---
 
@@ -115,6 +116,13 @@ price triggers the strikethrough treatment.
    (per Adnan — this supersedes the earlier "raw/unmoderated" idea). Approved reviews
    drive each product's shown reviews and its aggregate rating/count. _Auto-send needs a
    scheduler — Supabase pg_cron or Vercel Cron._
+7a. **Review-invite admin controls (locked 2026-07-18, ✅ built, uncommitted).** On
+   `/admin/orders/<no>` → "Review Links", per product: the 21-day clock starts at
+   **payment**; **"Send email now / Resend"** emails the magic link immediately and marks
+   it sent, which **stops** the auto-send (when email isn't configured it says so and does
+   NOT mark sent); **"Copy link"** (for WhatsApp) **never** touches the timer;
+   **"Restart timer"** clears sent and re-arms auto-send **+21 days** (same token).
+   Server route: `POST /api/admin/review-invites/[id]/send` (admin cookie-authed).
 8. **Admin dashboard (`/admin`)** — Supabase-auth login. Capabilities: view orders + full
    detail + history; edit product price, sale price, and other fields; content management;
    **on-demand Excel export** (always latest data); a WhatsApp send button per order;
@@ -169,33 +177,35 @@ price triggers the strikethrough treatment.
      rotate at launch) with all modules on live data via RLS (is_admin()).
    - Magic-link reviews live: `/review/[token]` → single-use `submit_review` RPC
      → pending review → admin approval. Verified by an end-to-end test.
-3. **Razorpay (test mode) — 🔴 ACTIVE / IN PROGRESS. Test keys RECEIVED 2026-07-06.**
-   Keys are in `.env.local` (`RAZORPAY_KEY_ID`=`rzp_test_…`, `RAZORPAY_KEY_SECRET`); the
-   `razorpay` npm SDK is installed. **This is the active build** — replace the mock payment
-   sheet with real Razorpay checkout. Step-by-step for the next session:
-   - `src/lib/razorpay.ts` — server SDK instance; `razorpayEnabled()` = both keys present.
-   - Extract the "mark order paid" block from `/api/checkout/confirm` into a shared
-     `finalizePaidOrder()` (status=paid, invoice_no, stock decrement, 21-day review invites,
-     emails) and call it from BOTH the mock confirm and the new verify route.
-   - `/api/checkout` (route.ts): after the pending DB order, if `razorpayEnabled`, create a
-     Razorpay order (amount=`total_paise`, currency INR, receipt=`order_no`), store
-     `razorpay_order_id`, and return `{ razorpay: { keyId, orderId, amount } }`. Keep the
-     current mock response when keys are absent.
-   - `/api/checkout/verify` (NEW): verify HMAC-SHA256(`${rzp_order_id}|${rzp_payment_id}`,
-     secret) === signature → `finalizePaidOrder(provider='razorpay', paymentId, signature)`.
-   - `/api/webhooks/razorpay` (NEW, `runtime='nodejs'`, RAW body): verify `X-Razorpay-Signature`
-     with `RAZORPAY_WEBHOOK_SECRET`; handle `payment.captured`/`payment.failed`; idempotent.
-     Gated on the webhook secret (set at deploy).
-   - `CheckoutClient.tsx`: when the create-order response has a `razorpay` field, load
-     `checkout.razorpay.com/v1/checkout.js` and open the real modal (prefill name/email/phone;
-     handler → POST `/api/checkout/verify` → success page; `ondismiss` → stay). Keep the mock
-     sheet as the fallback when keys are absent.
-   - **VERIFY end-to-end** (the bar): create-order returns a real Razorpay order id (proves
-     the keys), a signature-verify check, then a real browser test payment — test card
-     `4111 1111 1111 1111` (any future expiry / any CVV) or UPI `success@razorpay` — landing
-     the order as `paid` in Supabase, with the evidence shown.
-   - How-to reminder: the Razorpay **mobile app** doesn't expose Test Mode; use
-     **dashboard.razorpay.com → Test Mode → Account & Settings → API Keys**.
+3. ✅ **Razorpay (test mode) — COMPLETE + VERIFIED (2026-07-17/18).** Built exactly to the
+   earlier plan and proven end-to-end; **⚠️ UNCOMMITTED in the working tree as of
+   2026-07-20** (commit + dual-push only when Shoaib says so). What exists:
+   - `src/lib/razorpay.ts` — server SDK; `razorpayEnabled()` = both keys present.
+   - `src/lib/checkout/finalize.ts` — shared idempotent `finalizePaidOrder()` (atomic
+     pending→paid guarded by `status='pending'`, invoice_no, stock decrement, 21-day
+     review invites, gated emails). Called by mock confirm, verify, and webhook.
+   - `/api/checkout` — creates the Razorpay order (amount=`total_paise`, receipt=
+     `order_no`), stores `razorpay_order_id`, returns `{razorpay:{keyId,orderId,amount}}`;
+     plain mock response when keys absent.
+   - `/api/checkout/verify` — HMAC-SHA256(`order_id|payment_id`) with timing-safe compare;
+     `razorpay_order_id` is read from OUR order row (a foreign signature can't finalize).
+   - `/api/webhooks/razorpay` — raw-body verify vs `RAZORPAY_WEBHOOK_SECRET`, handles
+     `payment.captured`, idempotent, 200-no-op until the secret is set (deploy-time).
+   - `CheckoutClient.tsx` — loads checkout.js, opens the real modal (prefill + brand
+     theme), verify → success page; mock sheet fallback. **EMI + Pay Later + cardless EMI
+     hidden** via `config.display.hide` (client decision 2026-07-18; kept: UPI, Cards,
+     Netbanking, Wallet).
+   - **Verification done:** real Razorpay order ids created (proves keys); valid-signature
+     path lands `paid` + stock decrement + invoice + review invite; tampered signature →
+     400 and stays pending; idempotent re-verify; a REAL browser payment via
+     **Netbanking → test simulator → Success** produced a genuine Razorpay signature and a
+     `paid` order; Shoaib also completed a manual test payment.
+   - **Testing how-to:** the generic intl test card `4111…` is REJECTED (account is
+     domestic-only — correct for India). Use **Netbanking → any bank → Success**. The
+     modal's UPI section is QR-only in test mode (scanning a test QR with a real UPI app
+     does nothing — sandboxed).
+   - **DECISION (2026-07-18): keep TEST keys while Adnan & Hina test** — identical flow to
+     live with zero real money. Live keys are a launch-day step only.
    **Account context (2026-07-02):** Adnan has two Razorpay accounts — his **personal**
    one (currently powering the live WordPress site on skinature.org) and a **company**
    one (switch to later). We use the personal account first. Notes:
@@ -218,10 +228,36 @@ price triggers the strikethrough treatment.
    - **Review-invite auto-send** cron at `GET/POST /api/cron/send-review-invites`
      (protected by `CRON_SECRET`): finds invites past their 21-day `send_after`, emails
      the magic link, marks `sent_at`. Schedule it daily (Vercel Cron) at deploy.
-   - Remaining before launch: set the Resend keys + verify the sending domain (SPF/DKIM),
-     set `CRON_SECRET`, and register the Vercel Cron schedule. (Supabase Storage backup of
-     PDFs is optional — invoices regenerate on demand from order data.)
-5. Deploy to Vercel; switch Razorpay to live; DNS; live webhooks.
+   - **PLAN CHANGED (2026-07-20): emails send via GMAIL SMTP, not Resend.** Client wants
+     all customer emails from **official.skinature@gmail.com**. That is only legitimately
+     possible through Gmail's own SMTP with an **App Password** (2FA → App Passwords);
+     no domain verification/DNS needed; ~500 emails/day cap accepted for now. TO DO: get
+     the app password from Adnan, swap `src/lib/email/send.ts` from Resend to Gmail SMTP
+     (e.g. nodemailer), keep the same gated no-op behavior, verify a real inbox delivery.
+     (Resend + `@skinature.org` sender can be revisited post-launch if volume/brand needs.)
+   - Also remaining: set `CRON_SECRET` + register the Vercel Cron for review invites.
+   - **Admin review-invite controls SHIPPED (2026-07-18, uncommitted)** — see §6 item 7a.
+5. **Deploy + domain — IN PROGRESS (2026-07-20). Decision: point skinature.org at Vercel
+   EARLY**, before real launch (no marketing exists; Adnan & Hina test by typing the
+   domain). Approved by both founders, including WordPress no longer being served.
+   **Domain/DNS facts (investigated):**
+   - GoDaddy = **registrar only**; Shoaib HAS GoDaddy access. The previous developer is
+     unreachable; **no access** to hosting cPanel, WordPress admin, or webmail admin.
+   - Live DNS is served by **webhostbox** (`ns1/ns2.bh-ht-11.webhostbox.net`, a
+     HostGator/Newfold reseller). Site A `192.185.129.80`; `www` CNAME → apex;
+     MX → `mail.skinature.org` (same IP); SPF `include:websitewelcome.com`;
+     webmail/cpanel/ftp subdomains all → same IP. Single server = site + mail.
+   - Editing DNS inside GoDaddy does NOTHING while nameservers point to webhostbox; the
+     lever is **changing nameservers at GoDaddy**.
+   - **WordPress backup is impossible without hosting access** (Adnan wanted it kept;
+     only route = recover the hosting account with the host's support — parked).
+   **Cutover steps:** commit + dual-push → add `skinature.org` + `www` to the Vercel
+   project → change nameservers at GoDaddy per Vercel's instructions → remove
+   `PREVIEW_BASIC_AUTH` → add temporary **noindex** until real launch → SSL auto.
+   **OPEN QUESTION (asked 2026-07-20, awaiting client):** does anyone read
+   `@skinature.org` mailboxes? Keep MX pointing at the old server (replicate records) vs
+   gmail-only (drop MX). Do NOT flip nameservers before this is answered.
+   At REAL launch: Razorpay live keys + live webhook, remove noindex, §11 checklist.
 
 ## 8. Open Items / To Brainstorm
 
@@ -278,11 +314,14 @@ price triggers the strikethrough treatment.
 | Need | From | Status |
 |------|------|--------|
 | Supabase project + keys | Shoaib (client creds) | ✅ done — `bvkzurzutwuxebrnrjqz`, ap-south-1 |
-| Razorpay **Test-mode** Key ID (`rzp_test_…`) + Key Secret | Adnan | requested — Dashboard → Settings → API Keys (Test Mode) → Generate Test Key. Live keys + webhook created at deploy, not now. |
+| Razorpay **Test-mode** Key ID (`rzp_test_…`) + Key Secret | Adnan | ✅ received 2026-07-06, in `.env.local`; integration built + verified. Live keys + webhook at launch. |
+| **Gmail App Password** for official.skinature@gmail.com (2FA → App Passwords) | Adnan | 🔴 needed — unblocks all customer emails (Gmail SMTP plan, §7.4) |
+| GoDaddy account access (registrar) | Adnan | ✅ obtained 2026-07-20 (registrar only; no hosting/WP/webmail access exists) |
+| `@skinature.org` mailbox decision (keep MX vs gmail-only) | Adnan/Hina | 🔴 asked 2026-07-20 — blocks the nameserver flip |
 | Razorpay account activated (KYC) + business name = "Nurtured by Nature Products" | Adnan | confirm (needed for LIVE, not for test build) |
 | Razorpay International enabled | Adnan / Razorpay | deferred with regional pricing (final phase) |
 | Business legal details (invoice) | Adnan | open |
-| Resend account + skinature.com DNS | Shoaib + domain owner | later |
+| ~~Resend account + domain DNS~~ | — | superseded 2026-07-20 by the Gmail SMTP plan (§7.4) |
 | Razorpay live keys | Adnan | before launch |
 | Domain DNS access | domain owner | before launch |
 | Vercel account | Shoaib / Adnan | before launch |
@@ -297,8 +336,9 @@ price triggers the strikethrough treatment.
 - [ ] Switch **Razorpay from test → live keys**.
 - [ ] Move all env vars into the **production host (Vercel)** — never rely on `.env.local` in prod.
 - [ ] Final **RLS audit** on every table (nothing sensitive readable/writable by `anon`).
-- [ ] Verify production **webhooks** (Razorpay) and **email domain** (Resend SPF/DKIM);
-      set `RESEND_API_KEY` / `EMAIL_FROM` / `EMAIL_ADMIN`.
+- [ ] Verify production **webhooks** (Razorpay: set `RAZORPAY_WEBHOOK_SECRET` + register
+      the webhook URL in the dashboard) and **email sending** (Gmail SMTP app password on
+      the host; a real inbox delivery verified — see §7.4 plan change).
 - [ ] Set `CRON_SECRET` and register the **Vercel Cron** for
       `/api/cron/send-review-invites` (daily) so 21-day review invites auto-send.
 - [ ] **Wipe ALL demo/seed data before real customers arrive** — the seeded orders,
@@ -308,9 +348,13 @@ price triggers the strikethrough treatment.
       real subscribers).
 - [ ] **Remove `PREVIEW_BASIC_AUTH`** from the Vercel project so the production site is
       public (the middleware is a no-op without it).
-- [ ] Replace the **mock payment sheet** with real Razorpay checkout.
-- [ ] Swap **admin demo auth** (`src/store/admin.ts`) for Supabase Auth and remove the
-      demo credentials.
+- [x] Replace the **mock payment sheet** with real Razorpay checkout. _(✅ done 2026-07-17,
+      test mode; the sheet remains only as the no-keys fallback.)_
+- [ ] Remove the **demo admin credentials** from the login screen
+      (`src/components/admin/LoginClient.tsx`) and rotate the admin@skinature.org password.
+      _(Auth itself is already real Supabase Auth.)_
+- [ ] Remove the temporary **noindex** added for the early domain cutover (see §7 item 5)
+      once the store truly launches.
 - [ ] Get **policy pages + support email** confirmed by Adnan (see §8).
 
 ## 12. Doc Set (what lives where)
