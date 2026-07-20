@@ -15,11 +15,15 @@ import {
   Download,
   Copy,
   Check,
+  Send,
+  RotateCcw,
 } from 'lucide-react'
 import {
   fetchAdminOrderByNo,
   updateOrderStatus,
   fetchInvitesForOrder,
+  sendInviteEmailNow,
+  restartInviteTimer,
 } from '@/lib/db/admin'
 import type { OrderStatus, ReviewInvite } from '@/lib/domain'
 import { buildOrderWhatsAppUrl } from '@/lib/whatsapp'
@@ -44,40 +48,111 @@ const NEXT_STEP: Partial<
 }
 
 function InviteRow({ invite }: { invite: ReviewInvite }) {
+  const [sentAt, setSentAt] = useState(invite.sentAt)
+  const [sendAfter, setSendAfter] = useState(invite.sendAfter)
   const [copied, setCopied] = useState(false)
+  const [busy, setBusy] = useState<'send' | 'restart' | null>(null)
+  const [note, setNote] = useState('')
+
+  const used = !!invite.usedAt
+
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(`${window.location.origin}/review/${invite.token}`)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // Clipboard unavailable; the token is still visible via the input fallback below.
+      // Clipboard unavailable in this context; nothing else to do.
     }
   }
+
+  const sendNow = async () => {
+    setBusy('send')
+    setNote('')
+    try {
+      const r = await sendInviteEmailNow(invite.id)
+      if (r.ok) {
+        setSentAt(r.sentAt ?? new Date().toISOString())
+        setNote('Email sent. The 21-day auto-send is now off.')
+      } else if (r.reason === 'email-not-configured') {
+        setNote('Email is not set up yet. Use Copy link to share via WhatsApp.')
+      } else {
+        setNote('Could not send the email.')
+      }
+    } catch (e) {
+      setNote((e as Error).message)
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const restart = async () => {
+    setBusy('restart')
+    setNote('')
+    try {
+      const next = await restartInviteTimer(invite.id)
+      setSentAt(null)
+      setSendAfter(next)
+      setNote('21-day timer restarted.')
+    } catch (e) {
+      setNote((e as Error).message)
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const status = used
+    ? `Review submitted ${formatDate(invite.usedAt as string)}`
+    : sentAt
+      ? `Emailed ${formatDate(sentAt)}, auto-send off`
+      : `Auto-sends ${formatDate(sendAfter)}`
+
   return (
-    <li className="py-3 flex items-center justify-between gap-3">
-      <div className="min-w-0">
-        <p className="text-forest-900 text-sm font-medium truncate">{invite.productName}</p>
-        <p className="text-forest-900/45 text-xs mt-0.5">
-          {invite.usedAt
-            ? `Review submitted ${formatDate(invite.usedAt)}`
-            : `Auto-send scheduled ${formatDate(invite.sendAfter)}`}
-        </p>
+    <li className="py-3.5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-forest-900 text-sm font-medium truncate">{invite.productName}</p>
+          <p className="text-forest-900/45 text-xs mt-0.5">{status}</p>
+        </div>
+        {used && (
+          <span className="inline-flex items-center gap-1.5 text-forest-700 text-[0.65rem] uppercase tracking-[0.08em] font-semibold flex-shrink-0">
+            <CheckCircle2 size={13} aria-hidden="true" />
+            Used
+          </span>
+        )}
       </div>
-      {invite.usedAt ? (
-        <span className="inline-flex items-center gap-1.5 text-forest-700 text-[0.65rem] uppercase tracking-[0.08em] font-semibold flex-shrink-0">
-          <CheckCircle2 size={13} aria-hidden="true" />
-          Used
-        </span>
-      ) : (
-        <button
-          onClick={copy}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-forest-900/15 bg-white rounded-lg text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-forest-900/70 hover:border-forest-900 hover:text-forest-900 transition-colors flex-shrink-0"
-        >
-          {copied ? <Check size={12} aria-hidden="true" /> : <Copy size={12} aria-hidden="true" />}
-          {copied ? 'Copied' : 'Copy link'}
-        </button>
+
+      {!used && (
+        <div className="flex flex-wrap items-center gap-2 mt-2.5">
+          <button
+            onClick={sendNow}
+            disabled={busy !== null}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-forest-900 text-cream rounded-lg text-[0.65rem] font-semibold uppercase tracking-[0.08em] hover:bg-forest-800 transition-colors disabled:opacity-60"
+          >
+            <Send size={12} aria-hidden="true" />
+            {busy === 'send' ? 'Sending...' : sentAt ? 'Resend email' : 'Send email now'}
+          </button>
+          <button
+            onClick={copy}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-forest-900/15 bg-white rounded-lg text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-forest-900/70 hover:border-forest-900 hover:text-forest-900 transition-colors"
+          >
+            {copied ? <Check size={12} aria-hidden="true" /> : <Copy size={12} aria-hidden="true" />}
+            {copied ? 'Copied' : 'Copy link'}
+          </button>
+          {sentAt && (
+            <button
+              onClick={restart}
+              disabled={busy !== null}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-forest-900/15 bg-white rounded-lg text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-forest-900/70 hover:border-forest-900 hover:text-forest-900 transition-colors disabled:opacity-60"
+            >
+              <RotateCcw size={12} aria-hidden="true" />
+              {busy === 'restart' ? 'Restarting...' : 'Restart timer'}
+            </button>
+          )}
+        </div>
       )}
+
+      {note && <p className="text-forest-900/55 text-xs mt-2">{note}</p>}
     </li>
   )
 }
@@ -259,8 +334,9 @@ export default function OrderDetailClient({ orderId: orderNo }: { orderId: strin
               </ul>
               <p className="text-forest-900/40 text-xs mt-4 leading-relaxed">
                 Each link lets this customer review that product without logging in.
-                Links auto-send by email 21 days after the order once email goes live;
-                until then, copy and share manually.
+                It auto-emails 21 days after the order (once email is live). Send it now
+                to email immediately (this turns off the auto-send), copy it to share via
+                WhatsApp, or restart the 21-day timer.
               </p>
             </Card>
           )}

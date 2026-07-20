@@ -128,6 +128,39 @@ export async function markInviteSent(inviteId: string): Promise<void> {
   if (error) throw error
 }
 
+const REVIEW_INVITE_DELAY_DAYS = 21
+
+/**
+ * Emails the review magic link to the customer now (server-side, via Resend).
+ * Returns `{ ok: false, reason: 'email-not-configured' }` when Resend is not set up
+ * yet — in which case the invite is NOT marked sent and the admin should Copy link.
+ */
+export async function sendInviteEmailNow(
+  inviteId: string
+): Promise<{ ok: boolean; reason?: string; sentAt?: string }> {
+  const res = await fetch(`/api/admin/review-invites/${inviteId}/send`, { method: 'POST' })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.error ?? 'Could not send the review email.')
+  return data
+}
+
+/**
+ * Re-arms the 21-day auto-send for an invite: clears `sent_at` and pushes
+ * `send_after` to 21 days from now (keeping the same magic-link token).
+ * Returns the new `send_after` timestamp.
+ */
+export async function restartInviteTimer(inviteId: string): Promise<string> {
+  const sendAfter = new Date(
+    Date.now() + REVIEW_INVITE_DELAY_DAYS * 24 * 60 * 60 * 1000
+  ).toISOString()
+  const { error } = await db()
+    .from('review_invites')
+    .update({ sent_at: null, send_after: sendAfter })
+    .eq('id', inviteId)
+  if (error) throw error
+  return sendAfter
+}
+
 /* ── Settings ── */
 
 export async function fetchAdminSettings(): Promise<StoreSettings> {

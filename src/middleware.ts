@@ -12,7 +12,16 @@ import type { NextRequest } from 'next/server'
  */
 export function middleware(req: NextRequest) {
   const expected = process.env.PREVIEW_BASIC_AUTH
-  if (!expected) return NextResponse.next()
+  if (!expected) {
+    // Founders-testing phase on the live domain: no password, but keep search
+    // engines out until real launch. Controlled by SITE_NOINDEX (remove at launch).
+    if (process.env.SITE_NOINDEX) {
+      const res = NextResponse.next()
+      res.headers.set('X-Robots-Tag', 'noindex, nofollow')
+      return res
+    }
+    return NextResponse.next()
+  }
 
   const header = req.headers.get('authorization') ?? ''
   const [scheme, encoded] = header.split(' ')

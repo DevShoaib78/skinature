@@ -13,12 +13,78 @@ import { useCart, cartSubtotalPaise } from '@/store/cart'
 import { formatPaise } from '@/lib/format'
 import { INDIAN_STATES, shippingPaiseForState } from '@/lib/shipping'
 
+interface RazorpayCheckout {
+  keyId: string
+  orderId: string
+  amount: number
+}
+
 interface PendingOrder {
   orderId: string
   orderNo: string
   subtotalPaise: number
   shippingPaise: number
   totalPaise: number
+  /** Present only when Razorpay is configured; absent → mock payment sheet. */
+  razorpay?: RazorpayCheckout
+}
+
+interface RazorpayHandlerResponse {
+  razorpay_payment_id: string
+  razorpay_order_id: string
+  razorpay_signature: string
+}
+
+interface RazorpayOptions {
+  key: string
+  amount: number
+  currency: string
+  order_id: string
+  name: string
+  description?: string
+  image?: string
+  prefill?: { name?: string; email?: string; contact?: string }
+  notes?: Record<string, string>
+  theme?: { color?: string }
+  /** Subtractive method hide, e.g. remove Pay Later without touching UPI/cards/netbanking. */
+  config?: { display?: { hide?: { method: string }[] } }
+  handler?: (response: RazorpayHandlerResponse) => void
+  modal?: { ondismiss?: () => void }
+}
+
+interface RazorpayInstance {
+  open: () => void
+  on: (event: string, handler: (response: unknown) => void) => void
+}
+
+declare global {
+  interface Window {
+    Razorpay?: new (options: RazorpayOptions) => RazorpayInstance
+  }
+}
+
+const RAZORPAY_CHECKOUT_SRC = 'https://checkout.razorpay.com/v1/checkout.js'
+
+/** Loads Razorpay's checkout.js once, resolving true when window.Razorpay is ready. */
+function loadRazorpayCheckout(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') return resolve(false)
+    if (window.Razorpay) return resolve(true)
+    const existing = document.querySelector<HTMLScriptElement>(
+      `script[src="${RAZORPAY_CHECKOUT_SRC}"]`
+    )
+    if (existing) {
+      existing.addEventListener('load', () => resolve(Boolean(window.Razorpay)))
+      existing.addEventListener('error', () => resolve(false))
+      return
+    }
+    const script = document.createElement('script')
+    script.src = RAZORPAY_CHECKOUT_SRC
+    script.async = true
+    script.onload = () => resolve(Boolean(window.Razorpay))
+    script.onerror = () => resolve(false)
+    document.body.appendChild(script)
+  })
 }
 
 interface FormState {
@@ -102,6 +168,7 @@ export default function CheckoutClient() {
   const [payOpen, setPayOpen] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [placing, setPlacing] = useState(false)
+  const [verifying, setVerifying] = useState(false)
   const [apiError, setApiError] = useState('')
   const [pendingOrder, setPendingOrder] = useState<PendingOrder | null>(null)
 
@@ -149,17 +216,89 @@ export default function CheckoutClient() {
           },
         }),
       })
-      const data = await res.json()
+      const data = (await res.json()) as PendingOrder & { error?: string }
       if (!res.ok) {
         setApiError(data.error ?? 'Something went wrong. Please try again.')
         return
       }
       setPendingOrder(data)
-      setPayOpen(true)
+      if (data.razorpay) {
+        // Real gateway: open the Razorpay checkout modal.
+        await openRazorpay(data)
+      } else {
+        // No keys configured: fall back to the mock payment sheet.
+        setPayOpen(true)
+      }
     } catch {
       setApiError('Could not reach the server. Check your connection and try again.')
     } finally {
       setPlacing(false)
+    }
+  }
+
+  const openRazorpay = async (order: PendingOrder) => {
+    if (!order.razorpay) return
+    const loaded = await loadRazorpayCheckout()
+    if (!loaded || !window.Razorpay) {
+      setApiError('Could not load the payment gateway. Check your connection and try again.')
+      return
+    }
+
+    const rzp = new window.Razorpay({
+      key: order.razorpay.keyId,
+      amount: order.razorpay.amount,
+      currency: 'INR',
+      order_id: order.razorpay.orderId,
+      name: 'Skinature',
+      description: `Order ${order.orderNo}`,
+      image: '/logo.png',
+      prefill: {
+        name: form.fullName.trim(),
+        email: form.email.trim(),
+        contact: form.phone.trim(),
+      },
+      notes: { order_no: order.orderNo },
+      theme: { color: '#1A3C34' },
+      // Hide Pay Later (BNPL) and EMI; keep UPI, cards, netbanking, wallets.
+      config: {
+        display: {
+          hide: [{ method: 'paylater' }, { method: 'emi' }, { method: 'cardless_emi' }],
+        },
+      },
+      handler: (response: RazorpayHandlerResponse) => {
+        void confirmRazorpay(order, response)
+      },
+      modal: {
+        // Customer closed the sheet without paying; the order stays pending.
+        ondismiss: () => setPlacing(false),
+      },
+    })
+    rzp.on('payment.failed', () => router.push('/checkout/failure'))
+    rzp.open()
+  }
+
+  const confirmRazorpay = async (order: PendingOrder, response: RazorpayHandlerResponse) => {
+    setVerifying(true)
+    try {
+      const res = await fetch('/api/checkout/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: order.orderId,
+          razorpayPaymentId: response.razorpay_payment_id,
+          razorpaySignature: response.razorpay_signature,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok && data.order) {
+        sessionStorage.setItem('skinature-last-order', JSON.stringify(data.order))
+        clear()
+        router.push('/checkout/success')
+      } else {
+        router.push('/checkout/failure')
+      }
+    } catch {
+      router.push('/checkout/failure')
     }
   }
 
@@ -567,6 +706,23 @@ export default function CheckoutClient() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Post-payment verification overlay (Razorpay path) */}
+      {verifying && (
+        <div
+          className="fixed inset-0 z-[150] bg-forest-950/60 backdrop-blur-sm flex items-center justify-center px-6"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="bg-white rounded-3xl px-8 py-10 text-center shadow-2xl">
+            <div
+              className="w-10 h-10 border-2 border-forest-900/15 border-t-forest-900 rounded-full mx-auto mb-4 animate-spin"
+              aria-hidden="true"
+            />
+            <p className="text-forest-900/70 text-sm">Confirming your payment...</p>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </>

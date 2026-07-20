@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import { getSupabaseService } from "@/lib/supabase/server";
 import { INDIAN_STATES } from "@/lib/shipping";
+import { razorpayEnabled, razorpayKeyId, getRazorpay } from "@/lib/razorpay";
+
+export const runtime = "nodejs";
 
 /**
  * Creates a pending order with server-computed totals.
  * The client's cart is advisory; prices, stock, and shipping come from the DB.
- * When Razorpay lands, this same route also creates the Razorpay order.
+ * When Razorpay is configured, this route also creates the matching Razorpay
+ * order and returns the fields the browser checkout needs; otherwise it returns
+ * the plain order and the client falls back to the mock payment sheet.
  */
 
 interface CheckoutItem {
@@ -144,11 +149,51 @@ export async function POST(request: Request) {
     return bad("Could not create order items.", 500);
   }
 
+  const totalPaise = subtotalPaise + shippingPaise;
+
+  // ── Razorpay order (when configured); otherwise the client uses the mock sheet ──
+  if (razorpayEnabled()) {
+    try {
+      const rzpOrder = await getRazorpay().orders.create({
+        amount: totalPaise, // smallest currency unit = paise for INR
+        currency: "INR",
+        receipt: orderRow.order_no,
+        notes: { order_no: orderRow.order_no },
+      });
+
+      const { error: linkError } = await db
+        .from("orders")
+        .update({ razorpay_order_id: rzpOrder.id })
+        .eq("id", orderRow.id);
+      if (linkError) {
+        await db.from("orders").delete().eq("id", orderRow.id);
+        return bad("Could not link payment order.", 500);
+      }
+
+      return NextResponse.json({
+        orderId: orderRow.id,
+        orderNo: orderRow.order_no,
+        subtotalPaise,
+        shippingPaise,
+        totalPaise,
+        razorpay: {
+          keyId: razorpayKeyId(),
+          orderId: rzpOrder.id,
+          amount: totalPaise,
+        },
+      });
+    } catch (err) {
+      console.error("[checkout] Razorpay order creation failed:", err);
+      await db.from("orders").delete().eq("id", orderRow.id);
+      return bad("Could not start payment. Please try again.", 502);
+    }
+  }
+
   return NextResponse.json({
     orderId: orderRow.id,
     orderNo: orderRow.order_no,
     subtotalPaise,
     shippingPaise,
-    totalPaise: subtotalPaise + shippingPaise,
+    totalPaise,
   });
 }

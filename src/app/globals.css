@@ -26,8 +26,13 @@
 }
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  /* Opacity only, intentionally NO transform. `animation-fill-mode: forwards`
+     retains the final transform as a matrix (even an identity one), which makes
+     the animated wrapper a containing block for position:fixed descendants and
+     traps the fixed Navbar + CartDrawer on the home page (they scroll with the
+     page instead of pinning to the viewport). A pure opacity fade avoids that. */
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes float {
