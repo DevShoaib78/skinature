@@ -75,13 +75,16 @@ after this capture — the terms below are the record.)_
 Prices stored as **integer paise**, displayed as ₹. Single price now; an optional sale
 price triggers the strikethrough treatment.
 
+_(Prices REVISED by the client 2026-07-22 alongside the full packaging/branding refresh;
+applied to the live DB + `data.ts` fallback the same day.)_
+
 | id | Name | Price | Sale price | Category |
 |----|------|-------|-----------|----------|
 | 1 | Brightening & Cleansing Mask | ₹499 | — | Skin Care |
-| 2 | Root Revival Hair Mask & Cocktail | ₹600 | — | Hair Care |
-| 3 | Root Revival Hair Oil | ₹550 | — | Hair Care |
-| 4 | Hair Care Kit | ₹1100 | — | Hair Care |
-| 5 | Bridal Kit | ₹1550 | — | Hair + Skin |
+| 2 | Root Revival Hair Mask & Cocktail | ₹649 | — | Hair Care |
+| 3 | Root Revival Hair Oil | ₹599 | — | Hair Care |
+| 4 | Hair Care Kit | ₹1299 | — | Hair Care |
+| 5 | Bridal Kit | ₹2999 | — | Hair + Skin |
 
 ## 6. Locked Decisions
 
@@ -260,6 +263,39 @@ price triggers the strikethrough treatment.
    At REAL launch: Razorpay live keys + live webhook, remove noindex, §11 checklist.
 
 ## 8. Open Items / To Brainstorm
+
+- **✅ IMPLEMENTED (2026-07-23, uncommitted): the 2026 REBRAND REHAUL.** New packaging
+  palette applied at the token layer (deep forest #2A3E2C, sand gold #E2D2A5, warm
+  creams, per-product colorways blush/mauve · peach/terracotta · sage/olive — source:
+  `public/Reference/`). Landing rebuilt to Adnan's flow: black/gold marquee **ticker**
+  (no promo line) → slim navbar (logo file trimmed → `public/logo-trimmed.webp`) →
+  **hero 3+1 slides** (product Banners + Family Lineup, FE-style) → **products** (Kama
+  cards, "Loved by Thousands & Counting" / CTA "Explore Our Products") → **review
+  shuffle-deck** (curated placeholder set w/ Google+Amazon badges — swap with real
+  reviews; live Google rating via Places API pending Adnan's business profile) →
+  **video showcase** (3 how-to films, D'you-style autoplay) → **benefits** (D'you
+  typographic list, doc content) → **Globally Glowing & Growing** (map kept, beliefs
+  sidebar) → footer. **About Us page** rebuilt at `/our-story` (Story/Philosophy/
+  Founders' Note + `The Cofounders.jpeg`); Brigade page copy updated. DB products
+  rewired: new prices, new image/gallery (scenes → video → pack shots; `.mp4` entries
+  render as video in the PDP gallery), docx ingredients + "Why You'll Love It"
+  benefits. ⚠️ Client will regenerate the flawed AI oil-bottle scene images later —
+  swap the specific files when provided. Original inputs for reference:
+  forestessentialsindia.com (ticker + hero), kamaayurveda.in (products + review deck),
+  dyou.co (video showcase + benefits design). Raw inputs:
+  - Ticker effect (continuous scrolling strip) at the very top.
+  - Hero section with slides, 4-5 product showcase mockups (Forest Essentials style).
+  - **Landing flow:** ticker → navbar → hero slides → Products (Kama style) → Reviews
+    (Google reviews preferred, "one stone two places"; Amazon element; shuffle-deck style
+    for written reviews, Kama style) → Video showcase (D'you style) → Benefits of
+    Skinature (existing content, redesigned, D'you style) → "Globally Glowing & Growing"
+    (keep heading + map, present info uniquely) → footer.
+  - **Separate About Us page:** Story, Philosophy, Founders' Note (+ The Cofounders.jpeg,
+    at `public/The Cofounders.jpeg`).
+  - Also flagged: AEO refining, Google reviews integration, preview-link refining.
+  - NOTE: some sections will need ADDITIONAL Gemini product mockups (different angles /
+    showcase styles like the reference sites); the first batch of generated scenes covers
+    prompts 1-6 (hair oil + cleansing mask sets) so far.
 
 - **Regional pricing (UAE / USA / international) — DEFERRED to the final phase.**
   Decision (Shoaib, 2026-07-02): **launch India/INR first**, tackle regional pricing

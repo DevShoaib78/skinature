@@ -34,6 +34,13 @@ landed a real Razorpay-issued signature and a `paid` order in Supabase. EMI + Pa
 are hidden via `config.display.hide` (kept: UPI, Cards, Netbanking, Wallet). **Test keys
 stay until real launch** — founders test with no real money.
 
+✅ **2026 REBRAND REHAUL implemented (2026-07-23, uncommitted)** — new palette tokens in
+`globals.css` (deep forest/sand gold/creams + product colorways), landing flow per client
+(ticker → hero slides → Kama-style products → review deck → video showcase → typographic
+benefits → global map → footer), About Us page at `/our-story`, DB rewired to the new
+media in `public/New Product Mockups Latest/` + `public/AI generated mockups/` (PDP
+gallery plays `.mp4` entries). Details: `docs/DECISIONS.md` §8 top item.
+
 🔴 **ACTIVE STATE (resume here) — see `docs/DECISIONS.md` §7 for full detail:**
 1. **This session's work is UNCOMMITTED** in the working tree (Razorpay, payment-method
    trim, the home-page cart-drawer fix, review-invite admin controls). Commit + dual-push
@@ -156,10 +163,10 @@ src/
 | # | Product | Price | Category |
 |---|---------|-------|----------|
 | 1 | Brightening & Cleansing Mask | ₹499 | Skin Care |
-| 2 | Root Revival Hair Mask & Cocktail | ₹600 | Hair Care |
-| 3 | Root Revival Hair Oil | ₹550 | Hair Care |
-| 4 | Hair Care Kit | ₹1100 | Hair Care |
-| 5 | Bridal Kit | ₹1550 | Hair + Skin |
+| 2 | Root Revival Hair Mask & Cocktail | ₹649 | Hair Care |
+| 3 | Root Revival Hair Oil | ₹599 | Hair Care |
+| 4 | Hair Care Kit | ₹1299 | Hair Care |
+| 5 | Bridal Kit | ₹2999 | Hair + Skin |
 
 Single price shown by default; an optional **sale price** triggers the ~~strikethrough~~ + sale display.
 
@@ -176,7 +183,13 @@ Single price shown by default; an optional **sale price** triggers the ~~striket
 - Prices as **integer paise**; display as ₹.
 - The mock data layer (`src/lib/data.ts`) is shaped to **mirror the future Supabase schema**
   so the swap to real data is a drop-in — keep it that way.
-- Product images live in `public/new mockups/` as WebP.
+- **Media (rearranged 2026-07-22 for the packaging refresh):** the NEW branding photos +
+  how-to videos live in `public/New Product Mockups Latest/` (named "hair oil 1.jpeg",
+  "cleansing mask video.mp4" etc.; "1" = box-front hero shot). ALL old media (previous
+  webp mockups, hero.mp4/webm, video1-3.mp4) is archived in
+  `public/Old Mockups and Videos/`. ⚠️ DB + `data.ts` image paths still point at the old
+  `/new mockups/...` locations, so product images 404 until the redesign rewires them —
+  do NOT push until that rewiring lands.
 - Remote images from Unsplash are allowed in `next.config.ts`.
 
 ## Backend & Environment
