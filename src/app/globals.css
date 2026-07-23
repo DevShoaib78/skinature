@@ -1,21 +1,37 @@
 @import "tailwindcss";
 
+/* ── Skinature 2026 rebrand palette ──
+   Source of truth: public/Reference/2-4.jpeg (client palette cards) + the new
+   packaging. Existing token NAMES are kept so every component rethemes at once;
+   VALUES moved from the old teal-green system to the warm botanical system.
+   Per-product colorways (pale tint + deep accent) mirror the packaging:
+   hair mask = blush/mauve · hair oil = peach/terracotta · face mask = sage/olive. */
 @theme inline {
-  --color-forest-950: #0D1F1A;
-  --color-forest-900: #1A3C34;
-  --color-forest-800: #245247;
-  --color-forest-700: #2E6A5C;
-  --color-forest-100: #E6F0EE;
-  --color-forest-50: #F2F8F7;
+  --color-forest-950: #1B2A1E;
+  --color-forest-900: #2A3E2C; /* logo deep forest — primary ink + CTAs */
+  --color-forest-800: #46523F; /* logo sage green */
+  --color-forest-700: #5C6B4F;
+  --color-forest-100: #E7EAE0;
+  --color-forest-50: #F2F4ED;
 
   --color-gold-600: #A88645;
   --color-gold-500: #C5A059;
   --color-gold-400: #D4AF37;
+  --color-gold-300: #E2D2A5; /* sand gold — ticker/banner surface (client mock) */
   --color-gold-100: #F4EBD9;
 
-  --color-cream: #FDFCF8;
-  --color-beige: #F5F1E8;
-  --color-beige-dark: #EBE5D5;
+  --color-cream: #FBF7EC;      /* warm page canvas */
+  --color-beige: #EAE3D3;      /* client "standard" warm neutral */
+  --color-beige-dark: #DFD5BE;
+
+  /* product colorways */
+  --color-blush: #EACDD0;      /* hair mask pale */
+  --color-mauve: #986273;      /* hair mask deep */
+  --color-peach: #F5E3C8;      /* hair oil pale */
+  --color-terracotta: #A9532F; /* hair oil deep */
+  --color-sage: #D3DCD3;       /* face mask pale */
+  --color-olive: #6A7350;      /* face mask deep */
+  --color-khaki: #949358;      /* projection accent */
 
   --font-serif: var(--font-serif);
   --font-sans: var(--font-sans);
@@ -23,6 +39,14 @@
 
   --animate-fade-in: fade-in 1s ease-out forwards;
   --animate-float: float 6s ease-in-out infinite;
+  --animate-marquee: marquee 28s linear infinite;
+}
+
+/* Continuous-scroll ticker (content duplicated once; -50% loops seamlessly).
+   Transform lives on the strip's inner span only — never wraps fixed elements. */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
 
 @keyframes fade-in {

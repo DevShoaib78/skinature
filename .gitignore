@@ -41,8 +41,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# project: unused reference assets (kept locally, excluded from the repo)
-/public/old mockups/
-/public/video1.mp4
-/public/video2.mp4
-/public/video3.mp4
+# project: internal/archive assets (kept locally, excluded from the repo + deploy)
+# - Old Mockups and Videos: superseded packaging + old hero/promo videos (archive)
+# - Reference: client palette images + the SKINATURE WEBSITE info.docx (working files)
+/public/Old Mockups and Videos/
+/public/Reference/

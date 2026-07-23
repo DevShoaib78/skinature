@@ -9,18 +9,19 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useCart, cartCount } from '@/store/cart'
 import CartDrawer from '@/components/cart/CartDrawer'
 import SearchOverlay from '@/components/search/SearchOverlay'
+import Ticker from '@/components/layout/Ticker'
 
 const NAV_LINKS = [
   { label: 'Shop', href: '/shop' },
-  { label: 'Our Story', href: '/our-story' },
-  { label: 'Beauty Brigade', href: '/#skinature-beauty-brigade' },
+  { label: 'About Us', href: '/our-story' },
+  { label: 'Beauty Brigade', href: '/beauty-brigade' },
 ]
 
 const MOBILE_LINKS = [
   { label: 'Home', href: '/' },
   { label: 'Shop', href: '/shop' },
-  { label: 'Our Story', href: '/our-story' },
-  { label: 'Beauty Brigade', href: '/#skinature-beauty-brigade' },
+  { label: 'About Us', href: '/our-story' },
+  { label: 'Beauty Brigade', href: '/beauty-brigade' },
   { label: 'Cart', href: '/cart' },
 ]
 
@@ -77,11 +78,12 @@ export default function Navbar() {
 
   return (
     <>
-      <header>
+      <header className="fixed top-0 left-0 right-0 z-50">
+        <Ticker />
         <nav
           aria-label="Main navigation"
           className={cn(
-            'fixed top-0 left-0 right-0 z-50 px-6 md:px-10 lg:px-12 transition-all duration-500 ease-out border-b',
+            'px-6 md:px-10 lg:px-12 transition-all duration-500 ease-out border-b',
             scrolled
               ? 'bg-cream/92 backdrop-blur-lg border-forest-900/8 py-2.5 md:py-3'
               : 'bg-transparent border-transparent py-4 md:py-5'
@@ -124,11 +126,13 @@ export default function Navbar() {
               <span
                 className={cn(
                   'relative block transition-all duration-500 ease-out',
-                  scrolled ? 'w-48 h-[3.75rem] md:w-64 md:h-20' : 'w-52 h-16 md:w-72 md:h-[5.5rem]'
+                  // logo-trimmed.webp is the mark with its transparent padding cropped
+                  // out, so these boxes are the REAL visual size — keep the bar slim.
+                  scrolled ? 'w-12 h-12 md:w-14 md:h-14' : 'w-14 h-14 md:w-[4.25rem] md:h-[4.25rem]'
                 )}
               >
                 <Image
-                  src="/logo-nobg.webp"
+                  src="/logo-trimmed.webp"
                   alt="Skinature, Nurtured by Nature"
                   fill
                   className="object-contain"
@@ -200,9 +204,9 @@ export default function Navbar() {
           >
             {/* Top bar: logo + close */}
             <div className="flex items-center justify-between px-6 py-4">
-              <span className="relative block w-32 h-10">
+              <span className="relative block w-12 h-12">
                 <Image
-                  src="/logo-nobg.webp"
+                  src="/logo-trimmed.webp"
                   alt="Skinature"
                   fill
                   className="object-contain object-left"

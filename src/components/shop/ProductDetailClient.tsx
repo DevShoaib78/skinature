@@ -14,6 +14,7 @@ import {
   Shield,
   Package,
   BadgeCheck,
+  Play,
 } from 'lucide-react'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
@@ -25,6 +26,10 @@ import type { Review } from '@/lib/domain'
 import { useCart } from '@/store/cart'
 
 const tabs = ['Benefits', 'Ingredients', 'Ritual'] as const
+
+/** Gallery entries ending in .mp4 are product videos (glamour shots first, then
+ *  the how-to video, then the plain pack shots with ingredient panels). */
+const isVideo = (src: string) => src.toLowerCase().endsWith('.mp4')
 
 const TRUST = [
   { icon: Leaf, label: 'Chemical-Free' },
@@ -122,14 +127,26 @@ export default function ProductDetailClient({
                     transition={{ duration: 0.3 }}
                     className="absolute inset-0"
                   >
-                    <Image
-                      src={product.gallery[activeImage] ?? product.image}
-                      alt={`${product.name}, image ${activeImage + 1}`}
-                      fill
-                      className="object-cover"
-                      priority
-                      sizes="(max-width: 1024px) 100vw, 50vw"
-                    />
+                    {isVideo(product.gallery[activeImage] ?? product.image) ? (
+                      <video
+                        key={product.gallery[activeImage]}
+                        src={product.gallery[activeImage]}
+                        controls
+                        playsInline
+                        preload="metadata"
+                        className="absolute inset-0 w-full h-full object-contain bg-forest-950"
+                        aria-label={`${product.name} video`}
+                      />
+                    ) : (
+                      <Image
+                        src={product.gallery[activeImage] ?? product.image}
+                        alt={`${product.name}, image ${activeImage + 1}`}
+                        fill
+                        className="object-cover"
+                        priority
+                        sizes="(max-width: 1024px) 100vw, 50vw"
+                      />
+                    )}
                   </motion.div>
                 </AnimatePresence>
                 {product.badge && (
@@ -141,27 +158,33 @@ export default function ProductDetailClient({
 
               {/* Thumbnails */}
               {product.gallery.length > 1 && (
-                <div className="flex gap-3 mt-4">
+                <div className="flex flex-wrap gap-3 mt-4">
                   {product.gallery.map((src, i) => (
                     <button
                       key={src}
                       onClick={() => setActiveImage(i)}
-                      aria-label={`View image ${i + 1} of ${product.name}`}
+                      aria-label={
+                        isVideo(src)
+                          ? `Play ${product.name} video`
+                          : `View image ${i + 1} of ${product.name}`
+                      }
                       aria-current={activeImage === i}
                       className={cn(
-                        'relative w-20 h-24 rounded-xl overflow-hidden bg-forest-50 border-2 transition-colors',
+                        'relative w-[4.2rem] h-20 md:w-20 md:h-24 rounded-xl overflow-hidden bg-forest-50 border-2 transition-colors',
                         activeImage === i
                           ? 'border-gold-500'
                           : 'border-transparent hover:border-forest-900/20'
                       )}
                     >
-                      <Image
-                        src={src}
-                        alt=""
-                        fill
-                        className="object-cover"
-                        sizes="80px"
-                      />
+                      {isVideo(src) ? (
+                        <span className="absolute inset-0 bg-forest-950 flex items-center justify-center">
+                          <span className="w-8 h-8 rounded-full bg-cream/90 flex items-center justify-center">
+                            <Play size={14} className="text-forest-900 ml-0.5" fill="currentColor" aria-hidden="true" />
+                          </span>
+                        </span>
+                      ) : (
+                        <Image src={src} alt="" fill className="object-cover" sizes="80px" />
+                      )}
                     </button>
                   ))}
                 </div>
@@ -329,6 +352,7 @@ export default function ProductDetailClient({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
                       transition={{ duration: 0.25 }}
+                      className="whitespace-pre-line"
                     >
                       {tabContent[activeTab]}
                     </motion.p>

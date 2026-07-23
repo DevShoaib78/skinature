@@ -45,12 +45,19 @@ export default function BeautyBrigadePage() {
           <span className="inline-block h-px w-16 bg-gold-500/70 mb-8" aria-hidden="true" />
 
           <p className="font-serif text-2xl md:text-3xl text-forest-900 mb-4">
-            Something beautiful is taking root.
+            Welcome to the Brigade.
+          </p>
+
+          <p className="text-forest-900/65 text-lg leading-relaxed mb-6">
+            A community that believes beauty doesn&apos;t need harsh chemicals,
+            complicated routines or impossible promises. Just honest ingredients.
+            Real results. And people who love both.
           </p>
 
           <p className="text-forest-900/65 text-lg leading-relaxed mb-12">
-            Membership, rewards, and early access are all in the works.
-            We will announce soon. Until then, the garden is open on Instagram.
+            Membership is on its way. Join us and let&apos;s stay in touch — new
+            launches, exclusive offers, and natural beauty tips you&apos;ll actually
+            use. Until then, the garden is open on Instagram.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center justify-center">

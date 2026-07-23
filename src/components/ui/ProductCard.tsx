@@ -26,7 +26,7 @@ export function ProductCard({
         className
       )}
     >
-      <div className="aspect-[4/5] relative overflow-hidden bg-forest-50">
+      <div className="aspect-[4/5] relative overflow-hidden bg-white">
         {product.badge && (
           <span className="absolute top-4 left-4 bg-white/90 backdrop-blur-md text-forest-900 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full z-10 shadow-sm">
             {product.badge}
@@ -46,7 +46,8 @@ export function ProductCard({
           src={product.image}
           alt={`${product.name}, ${product.benefit}`}
           fill
-          className="object-cover transition-transform duration-1000 ease-out group-hover:scale-110"
+          // Card images are the AI "photoshoot" scenes (full-bleed backgrounds).
+          className="object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
 
