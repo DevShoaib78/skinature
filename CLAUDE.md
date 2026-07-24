@@ -34,34 +34,36 @@ landed a real Razorpay-issued signature and a `paid` order in Supabase. EMI + Pa
 are hidden via `config.display.hide` (kept: UPI, Cards, Netbanking, Wallet). **Test keys
 stay until real launch** — founders test with no real money.
 
-✅ **2026 REBRAND REHAUL implemented (2026-07-23, uncommitted)** — new palette tokens in
-`globals.css` (deep forest/sand gold/creams + product colorways), landing flow per client
-(ticker → hero slides → Kama-style products → review deck → video showcase → typographic
-benefits → global map → footer), About Us page at `/our-story`, DB rewired to the new
-media in `public/New Product Mockups Latest/` + `public/AI generated mockups/` (PDP
-gallery plays `.mp4` entries). Details: `docs/DECISIONS.md` §8 top item.
+✅ **2026 REBRAND REHAUL — DONE, committed + pushed + LIVE (2026-07-23).** New palette
+tokens in `globals.css` (deep forest/sand gold/creams + product colorways), landing flow
+per client (ticker → hero slides → Kama-style products → review deck → video showcase →
+typographic benefits → global map → footer), About Us page at `/our-story`, DB rewired to
+the new media in `public/New Product Mockups Latest/` + `public/AI generated mockups/`
+(PDP gallery plays `.mp4` entries). Details: `docs/DECISIONS.md` §8 top item.
+⚠️ Client will regenerate the flawed AI **oil-bottle scene** images — swap those specific
+files when provided. Internal folders `public/Old Mockups and Videos/` + `public/Reference/`
+are gitignored (local only, never deployed).
+
+✅ **skinature.org is LIVE on Vercel (2026-07-23).** GoDaddy phone support cleared a stuck
+nameserver job; NS = `ns1/ns2.vercel-dns.com` (registry + all resolvers). **Vercel manages
+DNS — do NOT add manual A/CNAME records and do NOT switch back to GoDaddy-default NS.**
+apex 308→www, SSL issued on both, `PREVIEW_BASIC_AUTH` removed, `SITE_NOINDEX=1` set in
+Vercel (X-Robots-Tag noindex, robots.txt disallow-all) for the founders-testing phase. The
+Razorpay TEST keys are set in Vercel env. Dev→push→auto-deploy is wired: pushing `origin`
+(Skinature repo) deploys to the domain.
 
 🔴 **ACTIVE STATE (resume here) — see `docs/DECISIONS.md` §7 for full detail:**
-1. **This session's work is UNCOMMITTED** in the working tree (Razorpay, payment-method
-   trim, the home-page cart-drawer fix, review-invite admin controls). Commit + dual-push
-   only when the developer says so.
-2. **Email plan CHANGED: Gmail SMTP, not Resend.** Order/invoice/review emails must send
-   from **official.skinature@gmail.com** via a Gmail App Password (2FA → App Passwords;
-   ~500/day cap accepted). The Resend pipeline in `src/lib/email/` stays until swapped.
-   Waiting on the app password from the client.
-3. **Domain/DNS reality (investigated 2026-07-20):** GoDaddy = registrar ONLY (access ✅).
-   DNS is served by **webhostbox nameservers** (`ns1/ns2.bh-ht-11.webhostbox.net`);
-   WordPress + `@skinature.org` mail both live on `192.185.129.80` (HostGator reseller).
-   **No cPanel/WordPress/webmail admin access exists** (previous developer unreachable), so
-   the old site cannot be backed up. **Decision: point skinature.org at Vercel EARLY** (no
-   marketing yet; founders test by typing the domain) — approved by Adnan & Hina including
-   WordPress no longer being served. Do it by changing **nameservers at GoDaddy** per
-   Vercel's instructions after adding the domain to the Vercel project; remove
-   `PREVIEW_BASIC_AUTH`, add a temporary noindex until real launch. **Open question
-   (asked, awaiting client): keep `@skinature.org` MX receiving on the old server, or
-   gmail-only?** — that decides whether to replicate the MX records.
-4. Then: schedule the review-invite cron (`CRON_SECRET` + Vercel Cron), and at real launch
-   swap Razorpay test → live keys + register the live webhook (see §11 checklist).
+1. **Email — plan is `info@skinature.org` via Resend now that we control DNS** (send from a
+   verified skinature.org sender + forward replies to official.skinature@gmail.com), OR the
+   simpler Gmail-SMTP-from-official.skinature@gmail.com fallback. `src/lib/email/` is still
+   Resend-based + gated (no-op). Needs setup; unblocked now that DNS is ours.
+2. **`@skinature.org` MX** decision still open (keep old mailboxes receiving vs gmail-only) —
+   not blocking; Vercel DNS can hold MX records when decided.
+3. **Real reviews** — landing review-deck is a curated placeholder set; wire live Google
+   (Places API, needs Adnan's Business Profile) + curated Amazon reviews when available.
+4. **Review-invite cron** — schedule it (`CRON_SECRET` already in Vercel env + Vercel Cron).
+5. **REAL LAUNCH (later):** swap Razorpay test → live keys + register live webhook, and
+   **remove `SITE_NOINDEX`** so Google can index. See §11 checklist.
 
 Backend specifics: schema/RLS/seed in `supabase/migrations/` applied via
 `node scripts/db-setup.mjs`; server data access `src/lib/db/store.ts` (service key,
