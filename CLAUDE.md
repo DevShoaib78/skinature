@@ -52,18 +52,39 @@ Vercel (X-Robots-Tag noindex, robots.txt disallow-all) for the founders-testing 
 Razorpay TEST keys are set in Vercel env. Dev→push→auto-deploy is wired: pushing `origin`
 (Skinature repo) deploys to the domain.
 
+✅ **EMAIL IS LIVE (2026-07-28).** Gmail SMTP via **nodemailer**, sending as
+**official.skinature@gmail.com** with a Google **App Password** (2SV enabled on that
+account; backup codes saved by the client). Resend is gone. Gated on
+`GMAIL_USER`+`GMAIL_APP_PASSWORD` (missing = graceful no-op). Verified by a REAL send:
+SMTP auth OK, 57KB PDF invoice attached, customer + admin mails delivered. Test any time:
+`npx tsx scripts/test-email.mts <address>`.
+
+✅ **RAZORPAY IS LIVE (2026-07-28).** Live keys generated (old WP key
+`rzp_live_R5FEh4HnENzB2Z` deactivated), live webhook registered at
+`https://www.skinature.org/api/webhooks/razorpay` (`payment.captured`/`payment.failed`),
+old WooCommerce webhook removed. **Live keys live ONLY in Vercel env — `.env.local`
+deliberately keeps TEST keys so local dev can never charge a real card.**
+
+🔒 **SECURITY FIX (2026-07-28, critical):** `/api/checkout/confirm` (the mock-payment
+route) marked orders paid with NO payment verification — with live keys that was free
+goods for anyone who POSTed a pending `orderId`. It now hard-returns **404 whenever
+`razorpayEnabled()`**, so it only exists for local dev without keys. Exploit re-run after
+the fix: 404, order stayed `pending`. **Never remove that guard.**
+
 🔴 **ACTIVE STATE (resume here) — see `docs/DECISIONS.md` §7 for full detail:**
-1. **Email — plan is `info@skinature.org` via Resend now that we control DNS** (send from a
-   verified skinature.org sender + forward replies to official.skinature@gmail.com), OR the
-   simpler Gmail-SMTP-from-official.skinature@gmail.com fallback. `src/lib/email/` is still
-   Resend-based + gated (no-op). Needs setup; unblocked now that DNS is ours.
-2. **`@skinature.org` MX** decision still open (keep old mailboxes receiving vs gmail-only) —
-   not blocking; Vercel DNS can hold MX records when decided.
-3. **Real reviews** — landing review-deck is a curated placeholder set; wire live Google
-   (Places API, needs Adnan's Business Profile) + curated Amazon reviews when available.
+1. **WhatsApp** — `src/lib/whatsapp.ts` has the Meta **Cloud API** integration built and
+   wired into `finalizePaidOrder` (direct, NO BSP — client rejected AiSensy/Interakt/WATI).
+   Gated on `WHATSAPP_PHONE_NUMBER_ID`+`WHATSAPP_ACCESS_TOKEN`. Blocked on Adnan: a
+   **dedicated number NOT on the WhatsApp app** (using the official number would strip it
+   off the WhatsApp app — recommend a new SIM), Meta Business access (they have one from
+   ads, so verification may already be done), and template approval. Invoice PDF can be
+   attached via Meta's media upload endpoint — still to build.
+2. **Demo data wipe** — `node scripts/wipe-demo-data.mjs --confirm` (dry-run tested: 51
+   orders / 20 customers / 21 reviews / 5 invites). Run at launch, NOT before.
+3. **Landing review deck still contains invented testimonials** — client chose to keep them
+   for now and revisit during the UI pass. Replace with real Google/Amazon reviews.
 4. **Review-invite cron** — schedule it (`CRON_SECRET` already in Vercel env + Vercel Cron).
-5. **REAL LAUNCH (later):** swap Razorpay test → live keys + register live webhook, and
-   **remove `SITE_NOINDEX`** so Google can index. See §11 checklist.
+5. **REAL LAUNCH:** remove **`SITE_NOINDEX`** from Vercel so Google can index. See §11.
 
 Backend specifics: schema/RLS/seed in `supabase/migrations/` applied via
 `node scripts/db-setup.mjs`; server data access `src/lib/db/store.ts` (service key,
@@ -100,9 +121,9 @@ on the home page (`.animate-fade-in-slow` in `HomeClient`). Don't re-add a trans
 - **Styling:** Tailwind CSS v4 + Framer Motion + Lenis (smooth scroll)
 - **Icons:** Lucide React
 - **Fonts:** Cormorant Garamond (serif), Lato (sans), Pinyon Script (cursive)
-- **Backend (live):** Supabase (Postgres + Auth + Storage), Razorpay (prepaid; test keys
-  until launch), @react-pdf/renderer (PDF invoice), zustand (cart). **Email: Gmail SMTP
-  from official.skinature@gmail.com (planned swap; `src/lib/email/` is Resend-based today).**
+- **Backend (live):** Supabase (Postgres + Auth + Storage), Razorpay (prepaid, **LIVE keys
+  in Vercel**), @react-pdf/renderer (PDF invoice), zustand (cart), **nodemailer → Gmail SMTP
+  as official.skinature@gmail.com**, Meta WhatsApp Cloud API (built, awaiting credentials).
 - **Package Manager:** npm
 
 ## Commands

@@ -209,6 +209,22 @@ applied to the live DB + `data.ts` fallback the same day.)_
      does nothing — sandboxed).
    - **DECISION (2026-07-18): keep TEST keys while Adnan & Hina test** — identical flow to
      live with zero real money. Live keys are a launch-day step only.
+   - ✅ **WENT LIVE 2026-07-28.** Live key generated on Adnan's account (Merchant ID
+     `Qy6dDl6kq6bv7g`, KYC active, `skinature.org` approved). The old WordPress key
+     `rzp_live_R5FEh4HnENzB2Z` was **deactivated immediately** (safe — the domain now
+     points at Vercel, so the old WooCommerce checkout was already unreachable). Live
+     **webhook** registered at `https://www.skinature.org/api/webhooks/razorpay` for
+     `payment.captured` + `payment.failed`; the old WooCommerce webhook was removed.
+     ⚠️ **Live keys live ONLY in the Vercel env. `.env.local` deliberately keeps the TEST
+     keys** so local development can never charge a real card. Do not "fix" that.
+   - 🔒 **CRITICAL SECURITY FIX (2026-07-28), found in the pre-launch audit:**
+     `/api/checkout/confirm` — the mock-payment route — was PUBLIC and marked an order
+     `paid` with **no payment verification whatsoever**. Harmless in test mode, but with
+     live keys anyone could read the `orderId` from the `/api/checkout` response in
+     DevTools, POST it to `/confirm`, and receive goods free. It now returns **404
+     whenever `razorpayEnabled()` is true**, so it survives only for local dev without
+     keys. Re-ran the exploit after the fix: 404 returned, order stayed `pending`.
+     **Never remove that guard.**
    **Account context (2026-07-02):** Adnan has two Razorpay accounts — his **personal**
    one (currently powering the live WordPress site on skinature.org) and a **company**
    one (switch to later). We use the personal account first. Notes:
@@ -231,21 +247,18 @@ applied to the live DB + `data.ts` fallback the same day.)_
    - **Review-invite auto-send** cron at `GET/POST /api/cron/send-review-invites`
      (protected by `CRON_SECRET`): finds invites past their 21-day `send_after`, emails
      the magic link, marks `sent_at`. Schedule it daily (Vercel Cron) at deploy.
-   - 🔴 **EMAIL IS THE NEXT BUILD TASK.** Nothing sends today: `RESEND_API_KEY`/`EMAIL_FROM`
-     are unset, so `emailEnabled()` is false and every send is a deliberate no-op (orders
-     still complete fine). Two options, **now that we control DNS** (§7.5):
-     1. ⭐ **RECOMMENDED — `info@skinature.org` via Resend.** This is what Adnan actually
-        asked for. Sending rights come from DNS, not from owning a mailbox, so the lost
-        webhostbox mailboxes don't matter: add Resend's DKIM/SPF records in **Vercel DNS**,
-        set `RESEND_API_KEY` + `EMAIL_FROM`. Free tier = 3,000 emails/month. Replies can be
-        forwarded to `official.skinature@gmail.com` free (ImprovMX/Zoho) so Adnan reads
-        them in the inbox he already uses. Cost: ₹0.
-     2. **Fallback — Gmail SMTP from `official.skinature@gmail.com`** via an App Password
-        (2FA → App Passwords). No DNS needed, ~500/day cap, less branded. NOTE: you can
-        NOT send "from" a gmail address via Resend — Gmail's DMARC rejects it; only
-        Gmail's own SMTP is legitimate for that sender.
-     Either way: keep the existing gated no-op behaviour in `src/lib/email/`, and verify a
-     REAL inbox delivery (order confirmation + PDF invoice + review magic link).
+   - ✅ **EMAIL IS LIVE (2026-07-28) — Gmail SMTP, not Resend.** Client chose one inbox:
+     everything sends as **official.skinature@gmail.com** via **nodemailer** + a Google
+     **App Password** (2SV enabled on the account; backup codes saved by the client).
+     `resend` is no longer used. Gated on `GMAIL_USER` + `GMAIL_APP_PASSWORD`; missing =
+     graceful no-op so checkout never depends on email. ~500 recipients/day (ample; revisit
+     Zoho only if volume demands). **Verified by a real send:** SMTP auth OK, 57KB PDF
+     invoice generated and attached, customer + admin emails delivered.
+     Re-test any time: `npx tsx scripts/test-email.mts <address>`.
+     NOTE: you can NOT send "from" a gmail address via Resend — Gmail's DMARC rejects it,
+     so Gmail's own SMTP is the only legitimate route for this sender.
+   - The dead **`care@skinature.org`** address (never existed) was being advertised on
+     /contact and in the homepage JSON-LD — replaced with official.skinature@gmail.com.
    - Also remaining: register the **Vercel Cron** for review invites (`CRON_SECRET` is
      already set in the Vercel env).
    - **Admin review-invite controls SHIPPED (2026-07-18, live)** — see §6 item 7a.
@@ -401,13 +414,14 @@ applied to the live DB + `data.ts` fallback the same day.)_
       and `SUPABASE_DB_URL` in `.env.local`. **Do this before launch.**
 - [ ] **Re-issue / rotate all other secrets before production** — Supabase secret key,
       Razorpay keys, Resend key — standard go-live hygiene.
-- [ ] Switch **Razorpay from test → live keys**.
+- [x] Switch **Razorpay from test → live keys**. _(✅ 2026-07-28 — live keys + webhook in
+      Vercel; old WP key deactivated. Local .env.local stays on TEST by design.)_
 - [x] Move all env vars into the **production host (Vercel)** — never rely on `.env.local`
       in prod. _(✅ done: Supabase keys, Razorpay TEST keys, `CRON_SECRET`, `SITE_NOINDEX`.)_
 - [ ] Final **RLS audit** on every table (nothing sensitive readable/writable by `anon`).
-- [ ] Verify production **webhooks** (Razorpay: set `RAZORPAY_WEBHOOK_SECRET` + register
-      the webhook URL in the dashboard) and **email sending** (Gmail SMTP app password on
-      the host; a real inbox delivery verified — see §7.4 plan change).
+- [x] Verify production **webhooks** and **email sending**. _(✅ 2026-07-28 —
+      `RAZORPAY_WEBHOOK_SECRET` set + webhook registered; Gmail SMTP proven by a real
+      delivery with the PDF invoice attached.)_
 - [ ] Set `CRON_SECRET` and register the **Vercel Cron** for
       `/api/cron/send-review-invites` (daily) so 21-day review invites auto-send.
 - [ ] **Wipe ALL demo/seed data before real customers arrive** — the seeded orders,
