@@ -2,7 +2,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Link from "next/link";
 import { Instagram } from "lucide-react";
-import { SITE_NAME, SITE_URL } from "@/lib/data";
+import { SITE_NAME, SITE_URL, OG_IMAGE } from "@/lib/data";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -22,6 +22,7 @@ export const metadata: Metadata = {
     description: "Something beautiful is taking root. We will announce soon.",
     url: `${SITE_URL}/beauty-brigade`,
     type: "website",
+    images: [OG_IMAGE],
   },
 };
 

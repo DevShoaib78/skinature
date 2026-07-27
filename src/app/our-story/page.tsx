@@ -2,7 +2,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Image from "next/image";
 import Link from "next/link";
-import { SITE_NAME, SITE_URL } from "@/lib/data";
+import { SITE_NAME, SITE_URL, OG_IMAGE } from "@/lib/data";
 import type { Metadata } from "next";
 
 // About Us page per the client's info doc (2026-07-23): Story, Philosophy,
@@ -21,6 +21,7 @@ export const metadata: Metadata = {
       "We didn't reinvent nature. We simply listened to it. The Skinature story.",
     url: `${SITE_URL}/our-story`,
     type: "website",
+    images: [OG_IMAGE],
   },
 };
 

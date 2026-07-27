@@ -217,6 +217,22 @@ export function isOnSale(p: Product): boolean {
 export const SITE_NAME = 'Skinature'
 export const SITE_TAGLINE = 'Nurtured By Nature'
 export const SITE_URL = 'https://skinature.org'
+
+/**
+ * Shared link-preview image (1200x630 — the ratio WhatsApp / Facebook / LinkedIn
+ * / Instagram expect).
+ *
+ * ⚠️ Next.js SHALLOW-merges metadata: any page that declares its own `openGraph`
+ * block REPLACES the one in layout.tsx, silently dropping `og:image`. So every
+ * page defining `openGraph` must spread this in, or its link preview loses the
+ * image entirely.
+ */
+export const OG_IMAGE = {
+  url: '/og-image.png',
+  width: 1200,
+  height: 630,
+  alt: 'Skinature, Nurtured by Nature — clean botanical skincare and haircare',
+} as const
 export const SITE_DESCRIPTION =
   'Skinature is a premium natural skincare and haircare brand from India. 100% chemical-free, lab-tested, cruelty-free products, nurtured by nature and perfected for your skin.'
 export const INSTAGRAM_URL = 'https://www.instagram.com/official.skinature'

@@ -11,6 +11,7 @@ import {
   BUSINESS_GSTIN,
   BUSINESS_ADDRESS,
   BUSINESS_PILLARS,
+  OG_IMAGE,
 } from "@/lib/data";
 import type { Metadata } from "next";
 
@@ -27,6 +28,7 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     url: SITE_URL,
     type: "website",
+    images: [OG_IMAGE],
   },
 };
 

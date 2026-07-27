@@ -1,6 +1,6 @@
 import ShopClient from "@/components/shop/ShopClient";
 import { fetchProducts } from "@/lib/db/store";
-import { SITE_NAME, SITE_URL } from "@/lib/data";
+import { SITE_NAME, SITE_URL, OG_IMAGE } from "@/lib/data";
 import type { Metadata } from "next";
 
 export const revalidate = 300;
@@ -19,6 +19,7 @@ export const metadata: Metadata = {
     description: shopDescription,
     url: `${SITE_URL}/shop`,
     type: "website",
+    images: [OG_IMAGE],
   },
   twitter: {
     title: `Shop Natural Skincare Products | ${SITE_NAME}`,
