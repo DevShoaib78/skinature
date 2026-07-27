@@ -109,6 +109,14 @@ touches the timer; "Restart timer" re-arms it +21 days — semantics locked by t
 "Rs." not ₹ (the ₹ glyph is missing from standard PDF fonts). Verify PDF changes by
 running `npx tsx scripts/test-invoice-pdf.mts <out.pdf>` and opening the file.
 
+⚠️ **Metadata gotcha (learned 2026-07-28):** Next.js **shallow-merges** metadata — a page
+that declares its own `openGraph` block **replaces** the one in `layout.tsx` and silently
+drops `og:image`, killing link previews on WhatsApp/Facebook/LinkedIn (Twitter survives
+separately via the `twitter` block). Any page defining `openGraph` MUST spread in
+`OG_IMAGE` from `src/lib/data.ts`. The share card is `public/og-image.png` (1200x630 —
+regenerate with sharp if the branding changes); product pages intentionally override it
+with their own product photo.
+
 ⚠️ **CSS gotcha (learned 2026-07-18):** never leave a retained `transform` on a wrapper
 around fixed-position UI. `@keyframes fade-in` is opacity-only ON PURPOSE — with
 `animation-fill-mode: forwards`, an animated transform is retained as a matrix and makes
