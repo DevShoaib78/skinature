@@ -77,12 +77,14 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: `${SITE_NAME} | ${SITE_TAGLINE} | Premium Natural Skincare`,
     description: SITE_DESCRIPTION,
+    // 1200x630 is the ratio WhatsApp / Instagram DMs / Twitter / LinkedIn expect.
+    // The old square logo.png was cropped or letterboxed in every link preview.
     images: [
       {
-        url: "/logo.png",
-        width: 512,
-        height: 512,
-        alt: `${SITE_NAME}, ${SITE_TAGLINE}`,
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: `${SITE_NAME}, ${SITE_TAGLINE} — clean botanical skincare and haircare`,
       },
     ],
   },
@@ -90,7 +92,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: `${SITE_NAME} | ${SITE_TAGLINE}`,
     description: SITE_DESCRIPTION,
-    images: ["/logo.png"],
+    images: ["/og-image.png"],
   },
   icons: {
     icon: "/favicon.png",

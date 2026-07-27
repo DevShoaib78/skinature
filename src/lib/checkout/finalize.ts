@@ -1,5 +1,7 @@
 import { getSupabaseService } from '@/lib/supabase/server'
 import { emailEnabled, sendOrderEmails } from '@/lib/email/send'
+import { whatsappEnabled, sendOrderWhatsApp } from '@/lib/whatsapp'
+import { SITE_URL } from '@/lib/data'
 import { renderInvoiceBuffer } from '@/lib/pdf/render'
 import { rowToOrder, rowToSettings, ORDER_SELECT } from '@/lib/db/mappers'
 import type { OrderRow, SettingsRow } from '@/lib/db/mappers'
@@ -159,9 +161,10 @@ export async function finalizePaidOrder(params: {
     )
   }
 
-  // ── confirmation email + PDF invoice (graceful no-op until Resend is configured) ──
-  // Never let email/PDF failures fail a paid order.
-  if (emailEnabled()) {
+  // ── customer notifications: email + PDF invoice, and the WhatsApp message ──
+  // Both are gated and both are wrapped: a notification failure must NEVER fail a
+  // paid order (the money is already taken and the DB is already consistent).
+  if (emailEnabled() || whatsappEnabled()) {
     try {
       const [{ data: fullOrder }, { data: settingsRow }] = await Promise.all([
         db.from('orders').select(ORDER_SELECT).eq('id', order.id).single(),
@@ -170,11 +173,28 @@ export async function finalizePaidOrder(params: {
       if (fullOrder && settingsRow) {
         const domainOrder = rowToOrder(fullOrder as unknown as OrderRow)
         const settings = rowToSettings(settingsRow as SettingsRow)
-        const pdf = await renderInvoiceBuffer(domainOrder, settings)
-        await sendOrderEmails(domainOrder, settings, pdf)
+
+        if (emailEnabled()) {
+          try {
+            const pdf = await renderInvoiceBuffer(domainOrder, settings)
+            await sendOrderEmails(domainOrder, settings, pdf)
+          } catch (err) {
+            console.error('[finalize] order email failed:', err)
+          }
+        }
+
+        if (whatsappEnabled()) {
+          try {
+            const invoiceUrl = `${SITE_URL}/checkout/success?order=${domainOrder.orderNo}`
+            const res = await sendOrderWhatsApp(domainOrder, invoiceUrl)
+            if (!res.sent) console.error('[finalize] whatsapp not sent:', res.reason)
+          } catch (err) {
+            console.error('[finalize] whatsapp failed:', err)
+          }
+        }
       }
     } catch (err) {
-      console.error('[finalize] order email failed:', err)
+      console.error('[finalize] notifications failed:', err)
     }
   }
 

@@ -45,10 +45,12 @@ export default async function Home() {
             legalName: BUSINESS_LEGAL_NAME,
             slogan: SITE_TAGLINE,
             url: SITE_URL,
+            // schema.org: `logo` must be the mark itself (square is correct here);
+            // `image` is the representative image, so use the wide brand card.
             logo: `${SITE_URL}/logo.png`,
-            image: `${SITE_URL}/logo.png`,
+            image: `${SITE_URL}/og-image.png`,
             description: SITE_DESCRIPTION,
-            email: "care@skinature.org",
+            email: "official.skinature@gmail.com",
             taxID: BUSINESS_GSTIN,
             vatID: BUSINESS_GSTIN,
             founder: [

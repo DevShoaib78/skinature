@@ -9,7 +9,9 @@ import { cn } from '@/lib/utils'
 import { INSTAGRAM_URL } from '@/lib/data'
 
 // TODO(launch): confirm the official support email with the founders.
-const SUPPORT_EMAIL = 'care@skinature.org'
+// The brand runs a single inbox (client decision 2026-07-25). The old
+// @skinature.org mailboxes are no longer reachable, so never advertise them.
+const SUPPORT_EMAIL = 'official.skinature@gmail.com'
 
 const CHANNELS = [
   {
