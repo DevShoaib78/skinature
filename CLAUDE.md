@@ -109,12 +109,73 @@ worth building: (1) email typo detection/confirmation at checkout, (2) admin vis
 bounced/failed sends with a resend action, (3) **WhatsApp becomes materially more valuable**
 — the phone number is already captured and is a second channel independent of email typos.
 
-🔴 **ACTIVE STATE (resume here) — see `docs/DECISIONS.md` §7 for full detail:**
-0. **Meta Pixel requested** by the founders' ads person. Site is Next.js 16 App Router, so
-   the plain snippet is insufficient: it must fire `PageView` on client-side route changes
-   plus `ViewContent`/`AddToCart`/`InitiateCheckout` and, crucially, **`Purchase` with real
-   value+currency**. Needs only the Pixel ID from them. Conversions API is a good follow-up
-   since orders are already finalised server-side in `finalizePaidOrder`.
+═══════════════════════════════════════════════════════════════════════════════
+# 🔴 PENDING WORK — START HERE (accurate as of 2026-08-04)
+═══════════════════════════════════════════════════════════════════════════════
+
+### ⚡ P0 — do this FIRST, it is costing sales every day
+**`SITE_NOINDEX` is STILL SET in Vercel, so Google cannot index the store.** Verified live:
+`X-Robots-Tag: noindex, nofollow` and `robots.txt: Disallow: /`. The site has been trading
+and advertising for over a week with **zero organic discoverability — customers cannot even
+find it by searching "Skinature"**. This was the deliberate pre-launch switch and real
+launch happened without removing it.
+**Fix:** delete `SITE_NOINDEX` from the Vercel project env → redeploy → confirm the header
+is gone. One minute. The client has been told and agrees.
+
+### P1 — the three the client considers "the main things"
+1. **Meta Pixel** (their ads person is waiting; he only needs to hand over the Pixel ID).
+   Next.js App Router means the stock snippet is NOT enough — it fires `PageView` once and
+   then goes silent on client-side navigation. Must wire: route-change `PageView`,
+   `ViewContent` (product), `AddToCart`, `InitiateCheckout`, and above all **`Purchase`
+   with real value + currency** (that is what optimises spend and reports ROAS).
+   Conversions API is a strong follow-up — orders already finalise server-side in
+   `finalizePaidOrder`.
+2. **WhatsApp automatic order messages** — `src/lib/whatsapp.ts` is BUILT and wired into
+   `finalizePaidOrder` (Meta Cloud API direct, NO BSP). Blocked on Adnan: a **dedicated
+   number that is NOT on the WhatsApp app** (using the official number strips it off the
+   app — recommend a new SIM), Meta Business access (they have one from ads, so business
+   verification may already be done), and template approval. Attaching the invoice PDF via
+   Meta's media-upload endpoint is still to build.
+3. **Custom email on Zoho / Google Workspace.** ⚠️ Record the REAL reason: Adnan wants a
+   **different address** because `official.skinature@gmail.com` is already used in many
+   other places — it is an operational/branding decision, **NOT** a fix for the bounces.
+   Say so plainly if it comes up: the bounces were recipient-side and no email provider
+   fixes them. Swapping providers is a small change — `src/lib/email/send.ts` is a single
+   nodemailer transport; only the credentials and `EMAIL_FROM` change.
+
+### P2 — real problems, already diagnosed, not yet fixed
+4. **`skinature.com` shows a Bluehost "Account Suspended" page** (verified: 302 → suspended).
+   Unrelated domain we do not control; customers typing `.com` out of habit hit a dead page
+   and are lost. **Commercial fix:** Adnan acquires/reclaims it and 301s to `.org`. Also
+   audit every ad, Instagram bio and printed link to be sure they say `.org`.
+5. **₹15,221 of recoverable abandoned carts.** 13 customers reached the payment screen and
+   never completed; their phone numbers are in the DB (largest: Zoha Majeed ₹3,309, then
+   ₹1,858 / ₹1,857 / ₹1,758). **Highest-return action available to the client** — a simple
+   WhatsApp follow-up. Longer term, build an automatic abandoned-cart reminder ~1h after.
+6. **Email typo detection at checkout.** Zulekha Baig **PAID ₹559 (SKN-1225)** and received
+   nothing because she mistyped her address (`550 5.1.1`). Add typo detection / a confirm
+   field, plus **admin visibility of failed sends with a resend action**.
+7. **Rotate the Supabase DB password** — it was shared in chat during setup (2026-07-02).
+8. **The landing review deck still shows INVENTED testimonials** (Ayesha R., Priya S. …).
+   The store is now advertising to real customers, so fabricated reviews are a trust and
+   advertising-standards risk. Client chose to defer to the UI pass — re-raise it. Note
+   the DB now has **0 reviews**, and real ones start arriving after the first cron send
+   (see below), so genuine replacements are close.
+9. **Policy pages need Adnan's sign-off** — privacy/terms/refund/shipping are live carrying
+   sensible DEFAULTS I wrote, not his confirmed terms.
+10. **cPanel access for the old webhostbox hosting** — ~70 real March orders with full
+    customer details are still trapped there and the hosting could lapse at any time. The
+    `info@` mailbox is a partial backup (order emails carry name/phone/address).
+
+### P3 — parked by the client
+11. **UI + admin-panel changes** from Adnan & Hina — a batch of inputs the client will
+    describe in a later session. Nothing actionable yet.
+
+**Recently completed (do not redo):** targeted test-data cleanup (55 real orders kept,
+₹28,473, zero fixtures left); admin login secured (name-based, demo account deleted);
+review-invite cron scheduled in `vercel.json`.
+
+═══════════════════════════════════════════════════════════════════════════════
 1. **WhatsApp** — `src/lib/whatsapp.ts` has the Meta **Cloud API** integration built and
    wired into `finalizePaidOrder` (direct, NO BSP — client rejected AiSensy/Interakt/WATI).
    Gated on `WHATSAPP_PHONE_NUMBER_ID`+`WHATSAPP_ACCESS_TOKEN`. Blocked on Adnan: a
@@ -122,17 +183,31 @@ bounced/failed sends with a resend action, (3) **WhatsApp becomes materially mor
    off the WhatsApp app — recommend a new SIM), Meta Business access (they have one from
    ads, so verification may already be done), and template approval. Invoice PDF can be
    attached via Meta's media upload endpoint — still to build.
-2. ⚠️ **Demo data wipe — the blanket script is now UNSAFE.** `scripts/wipe-demo-data.mjs`
-   deletes ALL orders/customers/reviews, and the database now holds **real customer orders
-   mixed with seed data**. As of 2026-08-04: ~107 orders = ~39 seed (`@example.com`) + ~18
-   team test orders (syedadnan/mohammedshoaibchy/official.skinature) + ~50 genuine customer
-   orders. **Write a TARGETED cleanup** that deletes only seed + team rows (match on those
-   email patterns) and never touches real customers. Dry-run and show the row list for
-   approval before deleting anything.
+2. ✅ **Test-data cleanup DONE (2026-08-04)** via `scripts/cleanup-test-data.mjs` — the
+   blanket `wipe-demo-data.mjs` is obsolete and unsafe now (real orders are interleaved).
+   Classification the client set: a row is test only if the customer phone is one of the
+   reused placeholders (`9989298408`, `9885421522`, `6000000000`) or the email ends
+   `@example.com`. Deliberately NOT keyed on founder emails — Adnan, Hina and Shoaib all
+   placed genuine orders once Razorpay was live and those were kept. Result: 52 orders,
+   17 customers, 21 seed reviews removed; **55 real orders / ₹28,473 / 31 paid preserved**;
+   product rating+review_count recalculated (now 0 reviews, ratings 5.0).
 3. **Landing review deck still contains invented testimonials** — client chose to keep them
    for now and revisit during the UI pass. Replace with real Google/Amazon reviews.
-4. **Review-invite cron** — schedule it (`CRON_SECRET` already in Vercel env + Vercel Cron).
-5. **REAL LAUNCH:** remove **`SITE_NOINDEX`** from Vercel so Google can index. See §11.
+4. ✅ **Review-invite cron SCHEDULED (2026-08-04)** — `vercel.json` runs
+   `/api/cron/send-review-invites` daily at `0 4 * * *` (09:30 IST). Vercel injects
+   `Authorization: Bearer $CRON_SECRET` automatically, which is what the route checks.
+   Until this existed the endpoint was never called, so invites would have sat unsent
+   forever. **36 real customers have invites queued; the first fell due 2026-08-07.**
+   Worth confirming in the next session that sends actually went out (`sent_at` populated).
+5. ✅ **Admin login secured (2026-08-04).** The panel was open to anyone — the login page
+   printed a shared demo password and offered a one-click fill button, exposing every
+   customer's name, address and phone. Now: sign-in takes a **NAME** (`Syed Adnan Touseef`
+   or `Hina Mushfiq`, case/space-insensitive) mapped to internal Supabase identities in
+   `LoginClient.tsx`; the shared `admin@skinature.org` account was **deleted**; wrong name
+   and wrong password return the same message so valid names aren't disclosed. Both
+   founders share one password by explicit client choice (they accept the audit-trail
+   tradeoff). Provisioning: `scripts/setup-admin-users.mjs` (password via env, never
+   committed).
 
 Backend specifics: schema/RLS/seed in `supabase/migrations/` applied via
 `node scripts/db-setup.mjs`; server data access `src/lib/db/store.ts` (service key,

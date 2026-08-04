@@ -326,6 +326,25 @@ bounce.** Do not let that purchase happen on these grounds. Real remedies:
 3. **WhatsApp notifications become materially more important** — the phone number is
    already captured and is independent of email typos.
 
+**Issue D — "what does PENDING mean?" (founders' question, answered 2026-08-04).**
+`pending` = the customer completed the checkout form and reached the payment screen but
+**never completed payment; no money was taken**. An order only becomes `paid` when Razorpay
+confirms via signature verification or the webhook. **Verified against the live Razorpay API:
+all 24 pending orders show ₹0 received — a paying customer will never show as pending, so
+the PAID badge can be trusted absolutely.**
+Useful nuance found in the same analysis: of 24 pending orders, **10 were the same customer
+retrying and succeeding** (e.g. Hajira Tahseen SKN-1212 pending then SKN-1213 paid), so they
+are not lost. The other **14 never completed — ~₹15,221 of recoverable carts** with phone
+numbers on file (largest Zoha Majeed ₹3,309). A WhatsApp follow-up is the highest-return
+action available; an automatic abandoned-cart reminder is the systematic fix.
+
+**Email provider change (clarified by the client 2026-08-04).** Adnan wants a dedicated
+Zoho / Google Workspace address **because `official.skinature@gmail.com` is already used in
+too many other places** — an operational/branding decision. ⚠️ It is explicitly NOT a fix
+for the bounces in Issue C; those are recipient-side and no provider changes them. Swapping
+is cheap: `src/lib/email/send.ts` is one nodemailer transport, so only credentials and
+`EMAIL_FROM` change.
+
 **Also requested (2026-08-04): Meta Pixel** from the founders' ads person. Next.js App
 Router needs route-change `PageView` plus `ViewContent`/`AddToCart`/`InitiateCheckout` and
 **`Purchase` with value+currency** (the event that drives ad optimisation and ROAS). Only
