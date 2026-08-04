@@ -148,10 +148,15 @@ is gone. One minute. The client has been told and agrees.
    Unrelated domain we do not control; customers typing `.com` out of habit hit a dead page
    and are lost. **Commercial fix:** Adnan acquires/reclaims it and 301s to `.org`. Also
    audit every ad, Instagram bio and printed link to be sure they say `.org`.
-5. **₹15,221 of recoverable abandoned carts.** 13 customers reached the payment screen and
-   never completed; their phone numbers are in the DB (largest: Zoha Majeed ₹3,309, then
-   ₹1,858 / ₹1,857 / ₹1,758). **Highest-return action available to the client** — a simple
-   WhatsApp follow-up. Longer term, build an automatic abandoned-cart reminder ~1h after.
+5. **~₹15,000 of recoverable abandoned carts — hand this to the client.**
+   **Run `node scripts/abandoned-carts.mjs`** (read-only; `--days N` to narrow). It prints
+   the current list of customers who reached the payment screen and never completed, with
+   phone numbers, sorted by basket value, excluding anyone who later bought. As of
+   2026-08-04: **13 customers, ~₹14,700**, largest Zoha Majeed ₹3,309. Regenerate rather
+   than trusting these figures — it changes daily, and customer phone numbers are
+   deliberately NOT committed to the repo. **This is the highest-return action available to
+   the client**: a simple WhatsApp follow-up. The systematic fix is an automatic
+   abandoned-cart reminder ~1h after checkout, ideally over WhatsApp once that lands.
 6. **Email typo detection at checkout.** Zulekha Baig **PAID ₹559 (SKN-1225)** and received
    nothing because she mistyped her address (`550 5.1.1`). Add typo detection / a confirm
    field, plus **admin visibility of failed sends with a resend action**.
