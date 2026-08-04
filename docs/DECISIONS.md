@@ -289,6 +289,49 @@ applied to the live DB + `data.ts` fallback the same day.)_
    client ever wants that mail flowing again.
    At REAL launch: Razorpay live keys + live webhook, **remove `SITE_NOINDEX`**, §11.
 
+## 7b. POST-LAUNCH STATE + ISSUE LOG (2026-08-04)
+
+**The store is LIVE and trading.** Founders are advertising; genuine customers are ordering
+daily. Snapshot at 2026-08-04: **~107 orders total = ~39 seed + ~18 team test + ~50 real**,
+of which **~30 real paid orders ≈ Rs 28,000 revenue**. Treat this as production.
+
+**Issue A — customer saw "Account Suspended … contact Bluehost".** NOT our system.
+`skinature.com` is an unrelated domain on Bluehost (`50.87.179.240`), suspended, HTTP 403,
+nameservers `ns1/ns2.bluehost.com`. Our site is `skinature.org` → Vercel (`64.29.17.65`),
+healthy. People type `.com` by habit and hit a dead page, losing the sale. **Resolution is
+commercial:** Adnan should acquire/reclaim `skinature.com` and 301 it to `.org`; audit every
+ad, Instagram bio and printed link to ensure they say `.org`.
+
+**Issue B — "Processing your payment" hung; was anyone charged?** **No.** Every one of the
+20 pending orders holding a `razorpay_order_id` was queried against the live Razorpay API:
+all returned `amount_paid = 0`, status `created` or `attempted`. **Zero charged-but-
+unfulfilled customers.** This is normal UPI abandonment (customer opens the UPI app, does
+not finish). The signed webhook remains the backstop for a payment that completes after the
+browser handler is lost. No code fix required; UX improvement optional.
+
+**Issue C — order-confirmation emails bouncing.** Both bounce codes are **recipient-side**,
+not ours:
+- `452 4.2.2 … recipient's inbox is out of storage space` — the customer's Gmail is full
+  (Gmail retries ~48h). Seen for naaz59591@, zakiahasannashwa@.
+- `550 5.1.1 … account does not exist` — the customer **mistyped their address at
+  checkout**. Seen for zulekhabaig270@, who had **PAID** (SKN-1225, Rs559) and therefore
+  never received confirmation or invoice.
+⚠️ **Sending is healthy and far below limits** (~a few mails/day vs Gmail's ~500/day).
+**Both Adnan and Shoaib proposed buying Zoho / Google Workspace — that fixes NEITHER
+bounce.** Do not let that purchase happen on these grounds. Real remedies:
+1. **Email typo detection / confirm-your-email at checkout** (highest value — stops the
+   `550` class entirely).
+2. **Admin visibility of failed sends + a resend action** so a paid customer is never left
+   silently un-notified.
+3. **WhatsApp notifications become materially more important** — the phone number is
+   already captured and is independent of email typos.
+
+**Also requested (2026-08-04): Meta Pixel** from the founders' ads person. Next.js App
+Router needs route-change `PageView` plus `ViewContent`/`AddToCart`/`InitiateCheckout` and
+**`Purchase` with value+currency** (the event that drives ad optimisation and ROAS). Only
+the Pixel ID is needed. Conversions API is a strong follow-up — orders already finalise
+server-side in `finalizePaidOrder`.
+
 ## 8. Open Items / To Brainstorm
 
 - **✅ IMPLEMENTED + LIVE (2026-07-23): the 2026 REBRAND REHAUL.** New packaging

@@ -71,7 +71,50 @@ goods for anyone who POSTed a pending `orderId`. It now hard-returns **404 whene
 `razorpayEnabled()`**, so it only exists for local dev without keys. Exploit re-run after
 the fix: 404, order stayed `pending`. **Never remove that guard.**
 
+🚀 **THE STORE IS LIVE AND SELLING (as of 2026-08-04).** Adnan & Hina are advertising;
+real customers are ordering. ~30 genuine paid orders, ~Rs 28,000 revenue, orders arriving
+daily. **This is now a production system with real money and real customers — behave
+accordingly: no destructive DB operations without explicit confirmation, and verify before
+claiming anything is fixed.**
+
+🔴 **POST-LAUNCH ISSUES — DIAGNOSED 2026-08-04, FIXES NOT YET BUILT (start here):**
+
+**A. "Account Suspended / Bluehost" page seen by a customer — NOT our bug.**
+`skinature.com` is a **completely separate domain** (Bluehost, `50.87.179.240`, suspended,
+403) that nobody on this project controls. Our site is `skinature.org` on Vercel and is
+healthy. Customers type `.com` out of habit and land on a dead page. **Fix is commercial,
+not technical:** Adnan should acquire/reclaim `skinature.com` and 301 it to `.org`, and
+every ad/bio/link must be checked to point at `.org`. Until then some traffic is lost.
+
+**B. Payment "Processing your payment" hang — investigated, NO customer was charged.**
+Queried the Razorpay API for all 20 pending orders that had a Razorpay order created:
+**every one shows `amount_paid = 0`** (status `created` or `attempted`). Zero customers
+charged-but-unfulfilled. This is ordinary UPI abandonment (customer opens the UPI app and
+does not complete). The webhook backstop is in place, so a completed payment finalises even
+if the browser handler never fires. **No money lost. Improve the UX, don't panic.**
+
+**C. Email bounces — the diagnosis matters, DO NOT let the client buy the wrong fix.**
+The bounce codes are conclusive and both are **recipient-side**:
+- `452 4.2.2 recipient's inbox is out of storage space` (naaz59591@, zakiahasannashwa@) —
+  the CUSTOMER'S Gmail is full. Gmail retries for ~48h.
+- `550 5.1.1 account does not exist` (zulekhabaig270@) — the customer **mistyped their
+  email at checkout**.
+⚠️ **Our sending is working correctly and is nowhere near any limit** (~30 orders total ≈
+a few emails/day against Gmail's ~500/day). **Adnan and Shoaib both proposed buying Zoho /
+Google Workspace — that would NOT fix either bounce** and is money spent on the wrong
+problem. Say so plainly.
+**The genuine problem is real though:** `zulekhabaig270@gmail.com` PAID (SKN-1225, Rs559)
+and never received a confirmation or invoice because the address does not exist. Real fixes
+worth building: (1) email typo detection/confirmation at checkout, (2) admin visibility of
+bounced/failed sends with a resend action, (3) **WhatsApp becomes materially more valuable**
+— the phone number is already captured and is a second channel independent of email typos.
+
 🔴 **ACTIVE STATE (resume here) — see `docs/DECISIONS.md` §7 for full detail:**
+0. **Meta Pixel requested** by the founders' ads person. Site is Next.js 16 App Router, so
+   the plain snippet is insufficient: it must fire `PageView` on client-side route changes
+   plus `ViewContent`/`AddToCart`/`InitiateCheckout` and, crucially, **`Purchase` with real
+   value+currency**. Needs only the Pixel ID from them. Conversions API is a good follow-up
+   since orders are already finalised server-side in `finalizePaidOrder`.
 1. **WhatsApp** — `src/lib/whatsapp.ts` has the Meta **Cloud API** integration built and
    wired into `finalizePaidOrder` (direct, NO BSP — client rejected AiSensy/Interakt/WATI).
    Gated on `WHATSAPP_PHONE_NUMBER_ID`+`WHATSAPP_ACCESS_TOKEN`. Blocked on Adnan: a
@@ -79,8 +122,13 @@ the fix: 404, order stayed `pending`. **Never remove that guard.**
    off the WhatsApp app — recommend a new SIM), Meta Business access (they have one from
    ads, so verification may already be done), and template approval. Invoice PDF can be
    attached via Meta's media upload endpoint — still to build.
-2. **Demo data wipe** — `node scripts/wipe-demo-data.mjs --confirm` (dry-run tested: 51
-   orders / 20 customers / 21 reviews / 5 invites). Run at launch, NOT before.
+2. ⚠️ **Demo data wipe — the blanket script is now UNSAFE.** `scripts/wipe-demo-data.mjs`
+   deletes ALL orders/customers/reviews, and the database now holds **real customer orders
+   mixed with seed data**. As of 2026-08-04: ~107 orders = ~39 seed (`@example.com`) + ~18
+   team test orders (syedadnan/mohammedshoaibchy/official.skinature) + ~50 genuine customer
+   orders. **Write a TARGETED cleanup** that deletes only seed + team rows (match on those
+   email patterns) and never touches real customers. Dry-run and show the row list for
+   approval before deleting anything.
 3. **Landing review deck still contains invented testimonials** — client chose to keep them
    for now and revisit during the UI pass. Replace with real Google/Amazon reviews.
 4. **Review-invite cron** — schedule it (`CRON_SECRET` already in Vercel env + Vercel Cron).
