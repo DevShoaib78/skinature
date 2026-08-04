@@ -5,18 +5,33 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Lock, Eye, EyeOff, KeyRound } from 'lucide-react'
+import { Lock, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getSupabaseBrowser } from '@/lib/supabase/client'
 
-// Demo admin (a real Supabase Auth user). Rotate/remove at launch,
-// see docs/DECISIONS.md §11 Pre-Launch Checklist.
-const DEMO_ADMIN_EMAIL = 'admin@skinature.org'
-const DEMO_ADMIN_PASSWORD = 'skinature@2026'
+/**
+ * The founders sign in with their NAME, not an email (their request, 2026-08-04).
+ * Supabase Auth still runs underneath and needs an email identifier, so each
+ * name maps to an internal address here. Those addresses receive no mail; they
+ * are identifiers only. Keep in sync with scripts/setup-admin-users.mjs.
+ *
+ * Only these two names can sign in. No credentials are shown on this page —
+ * the previous shared demo account was printed here and has been deleted.
+ */
+const ADMIN_LOGINS: Record<string, string> = {
+  'syed adnan touseef': 'adnan@skinature.org',
+  'hina mushfiq': 'hina@skinature.org',
+}
+
+/** Case- and spacing-insensitive so "Hina  Mushfiq" still resolves. */
+function resolveAdminEmail(name: string): string | null {
+  const key = name.trim().toLowerCase().replace(/\s+/g, ' ')
+  return ADMIN_LOGINS[key] ?? null
+}
 
 export default function LoginClient() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
+  const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
@@ -26,22 +41,25 @@ export default function LoginClient() {
     e.preventDefault()
     setError('')
     setChecking(true)
+
+    const email = resolveAdminEmail(name)
+    if (!email) {
+      // Same wording as a wrong password, so this never reveals which names exist.
+      setChecking(false)
+      setError('Incorrect name or password.')
+      return
+    }
+
     const { error: authError } = await getSupabaseBrowser().auth.signInWithPassword({
-      email: email.trim(),
+      email,
       password,
     })
     setChecking(false)
     if (authError) {
-      setError('Incorrect email or password. Try the demo credentials below.')
+      setError('Incorrect name or password.')
     } else {
       router.replace('/admin')
     }
-  }
-
-  const fillDemo = () => {
-    setEmail(DEMO_ADMIN_EMAIL)
-    setPassword(DEMO_ADMIN_PASSWORD)
-    setError('')
   }
 
   const inputClass = cn(
@@ -89,17 +107,17 @@ export default function LoginClient() {
           <form onSubmit={submit} className="space-y-5">
             <div>
               <label
-                htmlFor="admin-email"
+                htmlFor="admin-name"
                 className="block text-xs uppercase tracking-[0.15em] font-semibold text-forest-900/60 mb-2"
               >
-                Email
+                Name
               </label>
               <input
-                id="admin-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@skinature.org"
+                id="admin-name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your full name"
                 autoComplete="username"
                 required
                 className={inputClass}
@@ -163,17 +181,12 @@ export default function LoginClient() {
             </button>
           </form>
 
-          {/* Demo access */}
+          {/* No credentials are ever displayed here — this panel exposes real
+              customer names, addresses and phone numbers. */}
           <div className="mt-7 pt-6 border-t border-forest-900/10">
-            <button
-              onClick={fillDemo}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3 border border-gold-500/50 text-gold-600 rounded-full text-xs uppercase tracking-[0.2em] font-semibold hover:bg-gold-100/40 transition-colors"
-            >
-              <KeyRound size={14} aria-hidden="true" />
-              Use Demo Credentials
-            </button>
-            <p className="text-forest-900/40 text-xs text-center mt-3 leading-relaxed">
-              Authenticated by Supabase. Demo credentials are rotated out at launch.
+            <p className="flex items-center justify-center gap-2 text-forest-900/40 text-xs text-center leading-relaxed">
+              <Lock size={12} aria-hidden="true" />
+              Authorised personnel only. Authenticated by Supabase.
             </p>
           </div>
         </div>
